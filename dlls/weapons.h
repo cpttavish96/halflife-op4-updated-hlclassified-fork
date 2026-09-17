@@ -772,6 +772,7 @@ public:
 private:
 	unsigned short m_usCrossbow;
 	unsigned short m_usCrossbow2;
+	bool m_bZoomed = false;
 };
 
 enum shotgun_e

@@ -330,6 +330,8 @@ void CCrossbow::Holster()
 
 void CCrossbow::PrimaryAttack()
 {
+	if (m_bZoomed)
+		SecondaryAttack();
 
 #ifdef CLIENT_DLL
 	if (m_pPlayer->m_iFOV != 0 && bIsMultiplayer())
@@ -459,6 +461,8 @@ void CCrossbow::FireBolt()
 
 void CCrossbow::SecondaryAttack()
 {
+	m_bZoomed = !m_bZoomed;
+
 	EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_AUTO, "weapons/sniper_zoom.wav", VOL_NORM, ATTN_NORM);
 	if (m_pPlayer->m_iFOV != 0)
 	{

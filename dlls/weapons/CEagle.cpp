@@ -298,9 +298,9 @@ void CEagle::Reload()
 {
 	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0)
 	{
-		const bool bResult = DefaultReload(EAGLE_MAX_CLIP, 0 != m_iClip ? EAGLE_RELOAD : EAGLE_RELOAD_NOSHOT, 1.5);
+		const bool bResult = DefaultReload(EAGLE_MAX_CLIP, 0 == m_iClip ? EAGLE_RELOAD_NOSHOT : EAGLE_RELOAD, 1.5);
 
-		if (bResult)
+		if (0 == m_iClip)
 		{
 			Vector vecShellVelocity = m_pPlayer->pev->velocity + gpGlobals->v_right * RANDOM_FLOAT(50, 100) +
 									  gpGlobals->v_up * RANDOM_FLOAT(100, 150) + gpGlobals->v_forward * 25;
