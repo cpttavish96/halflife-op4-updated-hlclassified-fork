@@ -56,7 +56,8 @@ const char* CTalkMonster::m_szFriends[TLK_CFRIENDS] =
 		"monster_barney",
 		"monster_scientist",
 		"monster_sitting_scientist",
-};
+		"monster_fassassin_ally",
+	};
 
 
 //=========================================================
@@ -609,11 +610,11 @@ void CTalkMonster::RunTask(Task_t* pTask)
 void CTalkMonster::Killed(entvars_t* pevAttacker, int iGib)
 {
 	// If a client killed me (unless I was already Barnacle'd), make everyone else mad/afraid of him
-	if ((pevAttacker->flags & FL_CLIENT) != 0 && m_MonsterState != MONSTERSTATE_PRONE)
+	/*if ((pevAttacker->flags & FL_CLIENT) != 0 && m_MonsterState != MONSTERSTATE_PRONE)
 	{
 		AlertFriends();
 		LimitFollowers(CBaseEntity::Instance(pevAttacker), 0);
-	}
+	}*/
 
 	m_hTargetEnt = NULL;
 	// Don't finish that sentence

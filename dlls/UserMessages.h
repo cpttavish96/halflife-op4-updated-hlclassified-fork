@@ -54,6 +54,10 @@ inline int gmsgStatusText = 0;
 inline int gmsgStatusValue = 0;
 
 inline int gmsgWeapons = 0;
+inline int gmsgCloak = 0;
+// Poke646 - new msgs
+inline int gmsgStartUp = 0;
+inline int gmsgScope = 0;
 
 inline int gmsgSpectator = 0;
 inline int gmsgStatusIcon = 0;

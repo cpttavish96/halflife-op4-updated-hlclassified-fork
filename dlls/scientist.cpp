@@ -580,7 +580,7 @@ void CScientist::RunTask(Task_t* pTask)
 //=========================================================
 int CScientist::Classify()
 {
-	return CLASS_HUMAN_PASSIVE;
+	return CLASS_HUMAN_MILITARY;
 }
 
 
@@ -678,7 +678,7 @@ void CScientist::Spawn()
 		pev->skin = 1;
 
 	MonsterInit();
-	SetUse(&CScientist::FollowerUse);
+	SetUse(NULL);
 }
 
 //=========================================================
@@ -711,6 +711,7 @@ void CScientist::TalkInit()
 	m_szFriends[0] = "monster_scientist";
 	m_szFriends[1] = "monster_sitting_scientist";
 	m_szFriends[2] = "monster_barney";
+	m_szFriends[3] = "monster_fassassin_ally";
 
 	// scientists speach group names (group names are in sentences.txt)
 
@@ -758,11 +759,11 @@ void CScientist::TalkInit()
 bool CScientist::TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, float flDamage, int bitsDamageType)
 {
 
-	if (pevInflictor && (pevInflictor->flags & FL_CLIENT) != 0)
+	/*if (pevInflictor && (pevInflictor->flags & FL_CLIENT) != 0)
 	{
 		Remember(bits_MEMORY_PROVOKED);
 		StopFollowing(true);
-	}
+	}*/
 
 	// make sure friends talk about it if player hurts scientist...
 	return CTalkMonster::TakeDamage(pevInflictor, pevAttacker, flDamage, bitsDamageType);
@@ -1147,7 +1148,7 @@ class CDeadScientist : public CBaseMonster
 {
 public:
 	void Spawn() override;
-	int Classify() override { return CLASS_HUMAN_PASSIVE; }
+	int Classify() override { return CLASS_HUMAN_MILITARY; }
 
 	bool KeyValue(KeyValueData* pkvd) override;
 	int m_iPose; // which sequence to display
@@ -1302,7 +1303,7 @@ void CSittingScientist::Precache()
 //=========================================================
 int CSittingScientist::Classify()
 {
-	return CLASS_HUMAN_PASSIVE;
+	return CLASS_HUMAN_MILITARY;
 }
 
 

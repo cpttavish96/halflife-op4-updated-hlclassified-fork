@@ -1,3 +1,4 @@
+
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
@@ -53,6 +54,7 @@ void CHgun::Spawn()
 void CHgun::Precache()
 {
 	PRECACHE_MODEL("models/v_hgun.mdl");
+	PRECACHE_MODEL("models/v_hgun_inv.mdl");
 	PRECACHE_MODEL("models/w_hgun.mdl");
 	PRECACHE_MODEL("models/p_hgun.mdl");
 
@@ -82,8 +84,8 @@ bool CHgun::GetItemInfo(ItemInfo* p)
 	p->pszAmmo2 = NULL;
 	p->iMaxAmmo2 = -1;
 	p->iMaxClip = WEAPON_NOCLIP;
-	p->iSlot = 3;
-	p->iPosition = 3;
+	p->iSlot = 5;
+	p->iPosition = 0;
 	p->iId = m_iId = WEAPON_HORNETGUN;
 	p->iFlags = ITEM_FLAG_NOAUTOSWITCHEMPTY | ITEM_FLAG_NOAUTORELOAD;
 	p->iWeight = HORNETGUN_WEIGHT;
@@ -94,7 +96,29 @@ bool CHgun::GetItemInfo(ItemInfo* p)
 
 bool CHgun::Deploy()
 {
+	if (m_pPlayer->m_bIsCloaked)
+		return DefaultDeploy("models/v_hgun_inv.mdl", "models/p_hgun.mdl", HGUN_UP, "hive");
 	return DefaultDeploy("models/v_hgun.mdl", "models/p_hgun.mdl", HGUN_UP, "hive");
+}
+
+void CHgun::UpdateVModel()
+{
+	if (!m_pPlayer->m_bIsCloaked)
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_hgun.mdl");
+#else
+		LoadVModel("models/v_hgun.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_hgun_inv.mdl");
+#else
+		LoadVModel("models/v_hgun_inv.mdl", m_pPlayer);
+#endif
+	}
 }
 
 void CHgun::Holster()
@@ -113,6 +137,7 @@ void CHgun::Holster()
 void CHgun::PrimaryAttack()
 {
 	Reload();
+	UpdateVModel();
 
 	if (m_pPlayer->ammo_hornets <= 0)
 	{
@@ -163,6 +188,7 @@ void CHgun::PrimaryAttack()
 void CHgun::SecondaryAttack()
 {
 	Reload();
+	UpdateVModel();
 
 	if (m_pPlayer->ammo_hornets <= 0)
 	{
@@ -263,6 +289,7 @@ void CHgun::Reload()
 void CHgun::WeaponIdle()
 {
 	Reload();
+	UpdateVModel();
 
 	if (m_flTimeWeaponIdle > UTIL_WeaponTimeBase())
 		return;

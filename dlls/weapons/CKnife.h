@@ -34,6 +34,14 @@ enum KnifeAnim
 
 class CKnife : public CBasePlayerWeapon
 {
+private:
+	enum SwingMode
+	{
+		STAB_NONE = 0,
+		STAB_START,
+		STAB_DOING,
+	};
+
 public:
 	using BaseClass = CBasePlayerWeapon;
 
@@ -46,6 +54,9 @@ public:
 	void Holster() override;
 
 	void PrimaryAttack() override;
+	void SecondaryAttack() override;
+	void WeaponIdle() override;
+	void EXPORT BigSwing();
 
 	bool Swing(const bool bFirst);
 
@@ -66,9 +77,13 @@ public:
 #endif
 	}
 
-private:
-	unsigned short m_usKnife;
+	void UpdateVModel();
 
+	float m_flBigSwingStart;
+	int m_iSwingMode;
 	int m_iSwing;
 	TraceResult m_trHit;
+
+private:
+	unsigned short m_usKnife;
 };

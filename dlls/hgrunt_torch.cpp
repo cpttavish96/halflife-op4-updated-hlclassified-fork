@@ -1096,7 +1096,7 @@ void COFTorchAlly::Spawn()
 {
 	Precache();
 
-	SET_MODEL(ENT(pev), "models/hgrunt_torch.mdl");
+	SET_MODEL(ENT(pev), "models/massn.mdl");
 	UTIL_SetSize(pev, VEC_HUMAN_HULL_MIN, VEC_HUMAN_HULL_MAX);
 
 	pev->solid = SOLID_SLIDEBOX;
@@ -1167,7 +1167,7 @@ void COFTorchAlly::Spawn()
 //=========================================================
 void COFTorchAlly::Precache()
 {
-	PRECACHE_MODEL("models/hgrunt_torch.mdl");
+	PRECACHE_MODEL("models/massn.mdl");
 	PRECACHE_MODEL(TORCH_BEAM_SPRITE);
 
 	TalkInit();

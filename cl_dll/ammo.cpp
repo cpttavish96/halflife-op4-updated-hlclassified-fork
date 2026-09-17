@@ -73,10 +73,17 @@ void WeaponsResource::LoadWeaponSprites(WEAPON* pWeapon)
 {
 	int i, iRes;
 
+	//if (ScreenWidth < 1920)
+	//	iRes = 320;
+	//else
+	//	iRes = 640;
+
 	if (ScreenWidth < 640)
 		iRes = 320;
-	else
+	else if (ScreenWidth < 1280)
 		iRes = 640;
+	else
+		iRes = 2560;
 
 	char sz[256];
 
@@ -323,7 +330,7 @@ bool CHudAmmo::VidInit()
 	// If we've already loaded weapons, let's get new sprites
 	gWR.LoadAllWeaponSprites();
 
-	if (ScreenWidth >= 640)
+	if (ScreenWidth >= 1920)
 	{
 		giABWidth = 20;
 		giABHeight = 4;
@@ -424,8 +431,8 @@ void WeaponsResource::SelectSlot(int iSlot, bool fAdvance, int iDirection)
 	if (gHUD.m_fPlayerDead || (gHUD.m_iHideHUDDisplay & (HIDEHUD_WEAPONS | HIDEHUD_ALL)) != 0)
 		return;
 
-	if (!gHUD.HasSuit())
-		return;
+	/*if (!gHUD.HasSuit())
+		return;*/
 
 	if (!gHUD.HasAnyWeapons())
 		return;
@@ -829,8 +836,8 @@ bool CHudAmmo::Draw(float flTime)
 	int a, x, y, r, g, b;
 	int AmmoWidth;
 
-	if (!gHUD.HasSuit())
-		return true;
+	/*if (!gHUD.HasSuit())
+		return true;*/
 
 	if ((gHUD.m_iHideHUDDisplay & (HIDEHUD_WEAPONS | HIDEHUD_ALL)) != 0)
 		return true;

@@ -19,6 +19,7 @@
 #include "weapons.h"
 #include "gamerules.h"
 #include "UserMessages.h"
+#include "shake.h"
 
 #include "CSniperRifle.h"
 
@@ -44,6 +45,7 @@ void CSniperRifle::Precache()
 
 	PRECACHE_MODEL("models/w_m40a1.mdl");
 	PRECACHE_MODEL("models/v_m40a1.mdl");
+	PRECACHE_MODEL("models/v_m40a1_inv.mdl");
 	PRECACHE_MODEL("models/p_m40a1.mdl");
 
 	PRECACHE_SOUND("weapons/sniper_fire.wav");
@@ -70,7 +72,29 @@ void CSniperRifle::Spawn()
 
 bool CSniperRifle::Deploy()
 {
+	if (m_pPlayer->m_bIsCloaked)
+		return BaseClass::DefaultDeploy("models/v_m40a1_inv.mdl", "models/p_m40a1.mdl", SNIPERRIFLE_DRAW, "bow");
 	return BaseClass::DefaultDeploy("models/v_m40a1.mdl", "models/p_m40a1.mdl", SNIPERRIFLE_DRAW, "bow");
+}
+
+void CSniperRifle::UpdateVModel()
+{
+	if (!m_pPlayer->m_bIsCloaked)
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_m40a1.mdl");
+#else
+		LoadVModel("models/v_m40a1.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_m40a1_inv.mdl");
+#else
+		LoadVModel("models/v_m40a1_inv.mdl", m_pPlayer);
+#endif
+	}
 }
 
 void CSniperRifle::Holster()
@@ -91,6 +115,10 @@ void CSniperRifle::WeaponIdle()
 {
 	//Update autoaim
 	m_pPlayer->GetAutoaimVector(AUTOAIM_2DEGREES);
+
+	UpdateVModel();
+	
+	UpdateSpot();
 
 	ResetEmptySound();
 
@@ -123,6 +151,19 @@ void CSniperRifle::PrimaryAttack()
 	if (0 == m_iClip)
 	{
 		PlayEmptySound();
+		return;
+	}
+	UpdateVModel();
+	
+	if (m_pPlayer->m_afButtonLast & IN_ATTACK)
+	{
+#ifndef CLIENT_DLL
+		if (m_fSpotActive && m_pSpot)
+		{
+			m_pSpot->Killed(NULL, GIB_NORMAL);
+			m_pSpot = NULL;
+		}
+#endif
 		return;
 	}
 
@@ -158,7 +199,7 @@ void CSniperRifle::PrimaryAttack()
 
 void CSniperRifle::SecondaryAttack()
 {
-	EMIT_SOUND_DYN(m_pPlayer->edict(), CHAN_ITEM, "weapons/sniper_zoom.wav", VOL_NORM, ATTN_NORM, 0, PITCH_NORM);
+	// EMIT_SOUND_DYN(m_pPlayer->edict(), CHAN_ITEM, "weapons/sniper_zoom.wav", VOL_NORM, ATTN_NORM, 0, PITCH_NORM);
 
 	ToggleZoom();
 
@@ -201,7 +242,7 @@ void CSniperRifle::Reload()
 
 int CSniperRifle::iItemSlot()
 {
-	return 4;
+	return 3;
 }
 
 bool CSniperRifle::GetItemInfo(ItemInfo* p)
@@ -212,8 +253,8 @@ bool CSniperRifle::GetItemInfo(ItemInfo* p)
 	p->pszAmmo2 = 0;
 	p->iMaxAmmo2 = WEAPON_NOCLIP;
 	p->iMaxClip = SNIPERRIFLE_MAX_CLIP;
-	p->iSlot = 5;
-	p->iPosition = 2;
+	p->iSlot = 2;
+	p->iPosition = 5;
 	p->iFlags = 0;
 	p->iId = m_iId = WEAPON_SNIPERRIFLE;
 	p->iWeight = SNIPERRIFLE_WEIGHT;
@@ -230,14 +271,68 @@ void CSniperRifle::IncrementAmmo(CBasePlayer* pPlayer)
 
 void CSniperRifle::ToggleZoom()
 {
-	if (m_pPlayer->m_iFOV == 0)
+	m_fSpotActive = !m_fSpotActive;
+
+#ifndef CLIENT_DLL
+	if (!m_fSpotActive && m_pSpot)
 	{
-		m_pPlayer->m_iFOV = 18;
+		m_pSpot->Killed(NULL, GIB_NORMAL);
+		m_pSpot = NULL;
 	}
-	else
+#endif
+
+	EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_AUTO, "weapons/sniper_zoom.wav", VOL_NORM, ATTN_NORM);
+	if (m_pPlayer->m_iFOV != 0)
 	{
-		m_pPlayer->m_iFOV = 0;
+#ifndef CLIENT_DLL
+		MESSAGE_BEGIN(MSG_ONE, gmsgScope, NULL, m_pPlayer->pev);
+		WRITE_BYTE(0);
+		MESSAGE_END();
+
+		UTIL_ScreenFade(m_pPlayer, Vector(0, 0, 0), 0.1, 0.1, 255, FFADE_IN);
+#endif
+		m_pPlayer->m_iFOV = 0; // 0 means reset to default fov
 	}
+	else if (m_pPlayer->m_iFOV != 20)
+	{
+#ifndef CLIENT_DLL
+		MESSAGE_BEGIN(MSG_ONE, gmsgScope, NULL, m_pPlayer->pev);
+		WRITE_BYTE(1);
+		MESSAGE_END();
+
+		UTIL_ScreenFade(m_pPlayer, Vector(0, 0, 0), 0.1, 0.1, 255, FFADE_IN);
+#endif
+		m_pPlayer->m_iFOV = 15;
+	}
+}
+
+void CSniperRifle::UpdateSpot()
+{
+#ifndef CLIENT_DLL
+	// Don't turn on the laser if we're in the middle of a reload.
+	if (m_fInReload)
+	{
+		return;
+	}
+
+	if (m_fSpotActive)
+	{
+		if (!m_pSpot)
+		{
+			m_pSpot = CLaserSpot::CreateSpot();
+			m_pSpot->pev->scale = 0.05;
+		}
+
+		UTIL_MakeVectors(m_pPlayer->pev->v_angle);
+		Vector vecSrc = m_pPlayer->GetGunPosition();
+		Vector vecAiming = gpGlobals->v_forward;
+
+		TraceResult tr;
+		UTIL_TraceLine(vecSrc, vecSrc + vecAiming * 8192, dont_ignore_monsters, ENT(m_pPlayer->pev), &tr);
+
+		UTIL_SetOrigin(m_pSpot->pev, tr.vecEndPos);
+	}
+#endif
 }
 
 class CSniperRifleAmmo : public CBasePlayerAmmo

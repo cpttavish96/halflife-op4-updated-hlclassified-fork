@@ -364,7 +364,8 @@ void CHGruntAlly::GibMonster()
 		}
 		else if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::Saw))
 		{
-			pGun = DropItem("weapon_m249", vecGunPos, vecGunAngles);
+			// pGun = DropItem("weapon_m249", vecGunPos, vecGunAngles);
+			pGun = DropItem("weapon_sniperrifle", vecGunPos, vecGunAngles);
 		}
 		else
 		{
@@ -891,6 +892,7 @@ void CHGruntAlly::CheckAmmo()
 int CHGruntAlly::Classify()
 {
 	return CLASS_HUMAN_MILITARY_FRIENDLY;
+	// return CLASS_HUMAN_MILITARY;
 }
 
 //=========================================================
@@ -1013,7 +1015,8 @@ void CHGruntAlly::HandleAnimEvent(MonsterEvent_t* pEvent)
 		}
 		else if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::Saw))
 		{
-			DropItem("weapon_m249", vecGunPos, vecGunAngles);
+			 // DropItem("weapon_m249", vecGunPos, vecGunAngles);
+			DropItem("weapon_sniperrifle", vecGunPos, vecGunAngles);
 		}
 		else
 		{
@@ -1032,7 +1035,7 @@ void CHGruntAlly::HandleAnimEvent(MonsterEvent_t* pEvent)
 	case HGRUNT_AE_RELOAD:
 		if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::Saw))
 		{
-			EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/saw_reload.wav", 1, ATTN_NORM);
+			EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/sniper_reload_first_seq.wav", 1, ATTN_NORM);
 		}
 		else
 			EMIT_SOUND(ENT(pev), CHAN_WEAPON, "hgrunt/gr_reload1.wav", 1, ATTN_NORM);
@@ -1109,10 +1112,10 @@ void CHGruntAlly::HandleAnimEvent(MonsterEvent_t* pEvent)
 		{
 			Shoot();
 		}
-		else if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::Saw))
+		/*else if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::Saw))
 		{
 			ShootSaw();
-		}
+		}*/
 		break;
 
 	case HGRUNT_AE_KICK:
@@ -1152,7 +1155,7 @@ void CHGruntAlly::Spawn()
 {
 	Precache();
 
-	SET_MODEL(ENT(pev), "models/hgrunt_opfor.mdl");
+	SET_MODEL(ENT(pev), "models/massn.mdl");
 	UTIL_SetSize(pev, VEC_HUMAN_HULL_MIN, VEC_HUMAN_HULL_MAX);
 
 	pev->solid = SOLID_SLIDEBOX;
@@ -1253,7 +1256,7 @@ void CHGruntAlly::Spawn()
 //=========================================================
 void CHGruntAlly::Precache()
 {
-	PRECACHE_MODEL("models/hgrunt_opfor.mdl");
+	PRECACHE_MODEL("models/massn.mdl");
 
 	TalkInit();
 
@@ -1276,10 +1279,13 @@ void CHGruntAlly::Precache()
 
 	PRECACHE_SOUND("hgrunt/gr_reload1.wav");
 
-	PRECACHE_SOUND("weapons/saw_fire1.wav");
-	PRECACHE_SOUND("weapons/saw_fire2.wav");
-	PRECACHE_SOUND("weapons/saw_fire3.wav");
-	PRECACHE_SOUND("weapons/saw_reload.wav");
+	// PRECACHE_SOUND("weapons/saw_fire1.wav");
+	// PRECACHE_SOUND("weapons/saw_fire2.wav");
+	// PRECACHE_SOUND("weapons/saw_fire3.wav");
+	// PRECACHE_SOUND("weapons/saw_reload.wav");
+
+	PRECACHE_SOUND("weapons/sniper_fire");
+	PRECACHE_SOUND("weapons/sniper_reload_first_seq");
 
 	PRECACHE_SOUND("weapons/glauncher.wav");
 
@@ -2152,12 +2158,14 @@ void CHGruntAlly::SetActivity(Activity NewActivity)
 			if (m_fStanding)
 			{
 				// get aimable sequence
-				iSequence = LookupSequence("standing_saw");
+				// iSequence = LookupSequence("standing_saw");
+				iSequence = LookupSequence("standing_shotgun");
 			}
 			else
 			{
 				// get crouching shoot
-				iSequence = LookupSequence("crouching_saw");
+				// iSequence = LookupSequence("crouching_saw");
+				iSequence = LookupSequence("crouching_shotgun");
 			}
 		}
 		else
@@ -2836,7 +2844,7 @@ void CHGruntAlly::ShootSaw()
 
 	UTIL_MakeVectors(pev->angles);
 
-	switch (RANDOM_LONG(0, 1))
+	/*switch (RANDOM_LONG(0, 1))
 	{
 	case 0:
 	{
@@ -2851,11 +2859,13 @@ void CHGruntAlly::ShootSaw()
 		EjectBrass(vecShootOrigin - vecShootDir * 6, vecShellVelocity, pev->angles.y, m_iSawShell, TE_BOUNCE_SHELL);
 		break;
 	}
-	}
-
+	}*/
+	
+	Vector vecShellVelocity = gpGlobals->v_right * RANDOM_FLOAT(40, 90) + gpGlobals->v_up * RANDOM_FLOAT(75, 200) + gpGlobals->v_forward * RANDOM_FLOAT(-40, 40);
+	EjectBrass(vecShootOrigin - vecShootDir * 24, vecShellVelocity, pev->angles.y, m_iBrassShell, TE_BOUNCE_SHELL);
 	FireBullets(1, vecShootOrigin, vecShootDir, VECTOR_CONE_5DEGREES, 8192, BULLET_PLAYER_556, 2); // shoot +-5 degrees
 
-	switch (RANDOM_LONG(0, 2))
+	/*switch (RANDOM_LONG(0, 2))
 	{
 	case 0:
 		EMIT_SOUND_DYN(edict(), CHAN_WEAPON, "weapons/saw_fire1.wav", VOL_NORM, ATTN_NORM, 0, RANDOM_LONG(0, 15) + 94);
@@ -2866,7 +2876,8 @@ void CHGruntAlly::ShootSaw()
 	case 2:
 		EMIT_SOUND_DYN(edict(), CHAN_WEAPON, "weapons/saw_fire3.wav", VOL_NORM, ATTN_NORM, 0, RANDOM_LONG(0, 15) + 94);
 		break;
-	}
+	}*/
+	EMIT_SOUND_DYN(edict(), CHAN_WEAPON, "weapons/sniper_fire.wav", VOL_NORM, ATTN_NORM, 0, RANDOM_LONG(0, 15) + 94);
 
 	pev->effects |= EF_MUZZLEFLASH;
 
@@ -2874,6 +2885,7 @@ void CHGruntAlly::ShootSaw()
 
 	Vector angDir = UTIL_VecToAngles(vecShootDir);
 	SetBlending(0, angDir.x);
+	// m_flLastShot = gpGlobals->time;
 }
 
 bool CHGruntAlly::KeyValue(KeyValueData* pkvd)
@@ -3070,8 +3082,8 @@ LINK_ENTITY_TO_CLASS(monster_human_grunt_ally_dead, CDeadHGruntAlly);
 //=========================================================
 void CDeadHGruntAlly::Spawn()
 {
-	PRECACHE_MODEL("models/hgrunt_opfor.mdl");
-	SET_MODEL(ENT(pev), "models/hgrunt_opfor.mdl");
+	PRECACHE_MODEL("models/massn.mdl");
+	SET_MODEL(ENT(pev), "models/massn.mdl");
 
 	pev->effects = 0;
 	pev->yaw_speed = 8;

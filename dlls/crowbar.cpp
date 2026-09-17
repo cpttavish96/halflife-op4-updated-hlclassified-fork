@@ -41,6 +41,7 @@ void CCrowbar::Spawn()
 void CCrowbar::Precache()
 {
 	PRECACHE_MODEL("models/v_crowbar.mdl");
+	PRECACHE_MODEL("models/v_crowbar_inv.mdl");
 	PRECACHE_MODEL("models/w_crowbar.mdl");
 	PRECACHE_MODEL("models/p_crowbar.mdl");
 	PRECACHE_SOUND("weapons/cbar_hit1.wav");
@@ -72,7 +73,29 @@ bool CCrowbar::GetItemInfo(ItemInfo* p)
 
 bool CCrowbar::Deploy()
 {
+	if (m_pPlayer->m_bIsCloaked)
+		return DefaultDeploy("models/v_crowbar_inv.mdl", "models/p_crowbar.mdl", CROWBAR_DRAW, "crowbar");
 	return DefaultDeploy("models/v_crowbar.mdl", "models/p_crowbar.mdl", CROWBAR_DRAW, "crowbar");
+}
+
+void CCrowbar::UpdateVModel()
+{
+	if (!m_pPlayer->m_bIsCloaked)
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_crowbar.mdl");
+#else
+		LoadVModel("models/v_crowbar.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_crowbar_inv.mdl");
+#else
+		LoadVModel("models/v_crowbar_inv.mdl", m_pPlayer);
+#endif
+	}
 }
 
 void CCrowbar::Holster()
@@ -148,12 +171,18 @@ void CCrowbar::SwingAgain()
 	Swing(false);
 }
 
+void CCrowbar::WeaponIdle()
+{
+	UpdateVModel();
+}
+
 
 bool CCrowbar::Swing(bool fFirst)
 {
 	bool fDidHit = false;
 
 	TraceResult tr;
+	UpdateVModel();
 
 	UTIL_MakeVectors(m_pPlayer->pev->v_angle);
 	Vector vecSrc = m_pPlayer->GetGunPosition();

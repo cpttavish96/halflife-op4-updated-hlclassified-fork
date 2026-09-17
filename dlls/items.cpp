@@ -204,16 +204,26 @@ LINK_ENTITY_TO_CLASS(item_vest, CItemSuit);
 
 class CItemBattery : public CItem
 {
+//private:
+//	CSprite* m_pGlow;
+
 	void Spawn() override
 	{
 		Precache();
 		SET_MODEL(ENT(pev), "models/w_battery.mdl");
+		/*m_pGlow = CSprite::SpriteCreate("sprites/flare3.spr", pev->origin + Vector(0, 0, pev->maxs.z * 2), true);
+		m_pGlow->SetScale(2);
+		m_pGlow->SetTransparency(kRenderGlow, 0, 255, 255, 210, pev->renderfx);
+		m_pGlow->SetAttachment(edict(), 1);*/
 		CItem::Spawn();
 	}
 	void Precache() override
 	{
 		PRECACHE_MODEL("models/w_battery.mdl");
 		PRECACHE_SOUND("items/gunpickup2.wav");
+
+		//PRECACHE_MODEL("models/light.mdl");
+		//PRECACHE_MODEL("sprites/flare3.spr");
 	}
 	bool MyTouch(CBasePlayer* pPlayer) override
 	{
@@ -230,6 +240,7 @@ class CItemBattery : public CItem
 
 			pPlayer->pev->armorvalue += gSkillData.batteryCapacity;
 			pPlayer->pev->armorvalue = V_min(pPlayer->pev->armorvalue, MAX_NORMAL_BATTERY);
+			//m_pGlow->TurnOff();
 
 			EMIT_SOUND(pPlayer->edict(), CHAN_ITEM, "items/gunpickup2.wav", 1, ATTN_NORM);
 
@@ -256,6 +267,73 @@ class CItemBattery : public CItem
 };
 
 LINK_ENTITY_TO_CLASS(item_battery, CItemBattery);
+
+
+
+class CItemArmor : public CItem
+{
+	// private:
+	//	CSprite* m_pGlow;
+
+	void Spawn() override
+	{
+		Precache();
+		SET_MODEL(ENT(pev), "models/w_armor.mdl");
+		/*m_pGlow = CSprite::SpriteCreate("sprites/flare3.spr", pev->origin + Vector(0, 0, pev->maxs.z * 2), true);
+		m_pGlow->SetScale(2);
+		m_pGlow->SetTransparency(kRenderGlow, 0, 255, 255, 210, pev->renderfx);
+		m_pGlow->SetAttachment(edict(), 1);*/
+		CItem::Spawn();
+	}
+	void Precache() override
+	{
+		PRECACHE_MODEL("models/w_armor.mdl");
+		PRECACHE_SOUND("items/kevlar.wav");
+
+		// PRECACHE_MODEL("models/light.mdl");
+		// PRECACHE_MODEL("sprites/flare3.spr");
+	}
+	bool MyTouch(CBasePlayer* pPlayer) override
+	{
+		if (pPlayer->pev->deadflag != DEAD_NO)
+		{
+			return false;
+		}
+
+		if (pPlayer->pev->armorvalue < MAX_NORMAL_BATTERY)
+		{
+			int pct;
+			char szcharge[64];
+
+			pPlayer->pev->armorvalue += gSkillData.batteryCapacity;
+			pPlayer->pev->armorvalue = V_min(pPlayer->pev->armorvalue, MAX_NORMAL_BATTERY);
+			// m_pGlow->TurnOff();
+
+			EMIT_SOUND(pPlayer->edict(), CHAN_ITEM, "items/kevlar.wav", 1, ATTN_NORM);
+
+			MESSAGE_BEGIN(MSG_ONE, gmsgItemPickup, NULL, pPlayer->pev);
+			WRITE_STRING(STRING(pev->classname));
+			MESSAGE_END();
+
+
+			// Suit reports new power level
+			// For some reason this wasn't working in release build -- round it.
+			pct = (int)((float)(pPlayer->pev->armorvalue * 100.0) * (1.0 / MAX_NORMAL_BATTERY) + 0.5);
+			pct = (pct / 5);
+			if (pct > 0)
+				pct--;
+
+			sprintf(szcharge, "!HEV_%1dP", pct);
+
+			// EMIT_SOUND_SUIT(ENT(pev), szcharge);
+			pPlayer->SetSuitUpdate(szcharge, false, SUIT_NEXT_IN_30SEC);
+			return true;
+		}
+		return false;
+	}
+};
+
+LINK_ENTITY_TO_CLASS(item_armor, CItemArmor);
 
 
 class CItemAntidote : public CItem

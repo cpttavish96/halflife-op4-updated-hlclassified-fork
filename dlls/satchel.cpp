@@ -207,6 +207,8 @@ void CSatchel::Precache()
 {
 	PRECACHE_MODEL("models/v_satchel.mdl");
 	PRECACHE_MODEL("models/v_satchel_radio.mdl");
+	PRECACHE_MODEL("models/v_satchel_inv.mdl");
+	PRECACHE_MODEL("models/v_satchel_radio_inv.mdl");
 	PRECACHE_MODEL("models/w_satchel.mdl");
 	PRECACHE_MODEL("models/p_satchel.mdl");
 	PRECACHE_MODEL("models/p_satchel_radio.mdl");
@@ -275,10 +277,20 @@ bool CSatchel::Deploy()
 
 	bool result;
 
-	if (0 != m_chargeReady)
-		result = DefaultDeploy("models/v_satchel_radio.mdl", "models/p_satchel_radio.mdl", SATCHEL_RADIO_DRAW, "hive");
+	if (!m_pPlayer->m_bIsCloaked)
+	{
+		if (0 != m_chargeReady)
+			result = DefaultDeploy("models/v_satchel_radio.mdl", "models/p_satchel_radio.mdl", SATCHEL_RADIO_DRAW, "hive");
+		else
+			result = DefaultDeploy("models/v_satchel.mdl", "models/p_satchel.mdl", SATCHEL_DRAW, "trip");
+	}
 	else
-		result = DefaultDeploy("models/v_satchel.mdl", "models/p_satchel.mdl", SATCHEL_DRAW, "trip");
+	{
+		if (0 != m_chargeReady)
+			result = DefaultDeploy("models/v_satchel_radio_inv.mdl", "models/p_satchel_radio.mdl", SATCHEL_RADIO_DRAW, "hive");
+		else
+			result = DefaultDeploy("models/v_satchel_inv.mdl", "models/p_satchel.mdl", SATCHEL_DRAW, "trip");
+	}
 
 	if (result)
 	{
@@ -288,6 +300,47 @@ bool CSatchel::Deploy()
 	return result;
 }
 
+void CSatchel::UpdateVModel()
+{
+	if (!m_pPlayer->m_bIsCloaked)
+	{
+		if (0 != m_chargeReady)
+		{
+#ifndef CLIENT_DLL
+			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_satchel_radio.mdl");
+#else
+			LoadVModel("models/v_satchel_radio.mdl", m_pPlayer);
+#endif
+		}
+		else
+		{
+#ifndef CLIENT_DLL
+			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_satchel.mdl");
+#else
+			LoadVModel("models/v_satchel.mdl", m_pPlayer);
+#endif
+		}
+	}
+	else
+	{
+		if (0 != m_chargeReady)
+		{
+#ifndef CLIENT_DLL
+			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_satchel_radio_inv.mdl");
+#else
+			LoadVModel("models/v_satchel_radio_inv.mdl", m_pPlayer);
+#endif
+		}
+		else
+		{
+#ifndef CLIENT_DLL
+			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_satchel_inv.mdl");
+#else
+			LoadVModel("models/v_satchel_inv.mdl", m_pPlayer);
+#endif
+		}
+	}
+}
 
 void CSatchel::Holster()
 {
@@ -341,6 +394,7 @@ void CSatchel::PrimaryAttack()
 				}
 			}
 		}
+		UpdateVModel();
 
 		m_chargeReady = 2;
 		m_flNextPrimaryAttack = GetNextAttackDelay(0.5);
@@ -403,6 +457,8 @@ void CSatchel::Throw()
 
 void CSatchel::WeaponIdle()
 {
+	UpdateVModel();
+
 	if (m_flTimeWeaponIdle > UTIL_WeaponTimeBase())
 		return;
 

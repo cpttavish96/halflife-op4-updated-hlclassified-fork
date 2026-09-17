@@ -42,12 +42,13 @@ LINK_ENTITY_TO_CLASS(weapon_m249, CM249);
 void CM249::Precache()
 {
 	PRECACHE_MODEL("models/v_saw.mdl");
+	PRECACHE_MODEL("models/v_saw_inv.mdl");
 	PRECACHE_MODEL("models/w_saw.mdl");
 	PRECACHE_MODEL("models/p_saw.mdl");
 
 	m_iShell = PRECACHE_MODEL("models/saw_shell.mdl");
 	m_iLink = PRECACHE_MODEL("models/saw_link.mdl");
-	m_iSmoke = PRECACHE_MODEL("sprites/wep_smoke_01.spr");
+	m_iSmoke = PRECACHE_MODEL("sprites/smoke.spr");
 	m_iFire = PRECACHE_MODEL("sprites/xfire.spr");
 
 	PRECACHE_SOUND("weapons/saw_reload.wav");
@@ -76,7 +77,29 @@ void CM249::Spawn()
 
 bool CM249::Deploy()
 {
+	if (m_pPlayer->m_bIsCloaked)
+		return DefaultDeploy("models/v_saw_inv.mdl", "models/p_saw.mdl", M249_DRAW, "mp5");
 	return DefaultDeploy("models/v_saw.mdl", "models/p_saw.mdl", M249_DRAW, "mp5");
+}
+
+void CM249::UpdateVModel()
+{
+	if (!m_pPlayer->m_bIsCloaked)
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_saw.mdl");
+#else
+		LoadVModel("models/v_saw.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_saw_inv.mdl");
+#else
+		LoadVModel("models/v_saw_inv.mdl", m_pPlayer);
+#endif
+	}
 }
 
 void CM249::Holster()
@@ -97,6 +120,7 @@ void CM249::Holster()
 void CM249::WeaponIdle()
 {
 	ResetEmptySound();
+	UpdateVModel();
 
 	//Update auto-aim
 	m_pPlayer->GetAutoaimVector(AUTOAIM_5DEGREES);
@@ -152,6 +176,8 @@ void CM249::PrimaryAttack()
 
 		return;
 	}
+
+	UpdateVModel();
 
 	--m_iClip;
 
@@ -246,6 +272,7 @@ void CM249::PrimaryAttack()
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.2;
 
 #ifndef CLIENT_DLL
+
 	m_pPlayer->pev->punchangle.x = RANDOM_FLOAT(-2, 2);
 
 	m_pPlayer->pev->punchangle.y = RANDOM_FLOAT(-1, 1);
@@ -321,7 +348,7 @@ int CM249::RecalculateBody(int iClip)
 
 int CM249::iItemSlot()
 {
-	return 4;
+	return 3;
 }
 
 bool CM249::GetItemInfo(ItemInfo* p)
@@ -332,8 +359,8 @@ bool CM249::GetItemInfo(ItemInfo* p)
 	p->pszAmmo2 = nullptr;
 	p->iMaxAmmo2 = WEAPON_NOCLIP;
 	p->iMaxClip = M249_MAX_CLIP;
-	p->iSlot = 5;
-	p->iPosition = 0;
+	p->iSlot = 2;
+	p->iPosition = 4;
 	p->iFlags = 0;
 	p->iId = m_iId = WEAPON_M249;
 	p->iWeight = M249_WEIGHT;

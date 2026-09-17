@@ -45,6 +45,7 @@ void CHandGrenade::Precache()
 {
 	PRECACHE_MODEL("models/w_grenade.mdl");
 	PRECACHE_MODEL("models/v_grenade.mdl");
+	PRECACHE_MODEL("models/v_grenade_inv.mdl");
 	PRECACHE_MODEL("models/p_grenade.mdl");
 }
 
@@ -84,7 +85,29 @@ void CHandGrenade::IncrementAmmo(CBasePlayer* pPlayer)
 bool CHandGrenade::Deploy()
 {
 	m_flReleaseThrow = -1;
+	if (m_pPlayer->m_bIsCloaked)
+		return DefaultDeploy("models/v_grenade_inv.mdl", "models/p_grenade.mdl", HANDGRENADE_DRAW, "crowbar");
 	return DefaultDeploy("models/v_grenade.mdl", "models/p_grenade.mdl", HANDGRENADE_DRAW, "crowbar");
+}
+
+void CHandGrenade::UpdateVModel()
+{
+	if (!m_pPlayer->m_bIsCloaked)
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_grenade.mdl");
+#else
+		LoadVModel("models/v_grenade.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_grenade_inv.mdl");
+#else
+		LoadVModel("models/v_grenade_inv.mdl", m_pPlayer);
+#endif
+	}
 }
 
 bool CHandGrenade::CanHolster()
@@ -119,6 +142,7 @@ void CHandGrenade::PrimaryAttack()
 {
 	if (0 == m_flStartThrow && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0)
 	{
+		UpdateVModel();
 		m_flStartThrow = gpGlobals->time;
 		m_flReleaseThrow = 0;
 
@@ -130,6 +154,8 @@ void CHandGrenade::PrimaryAttack()
 
 void CHandGrenade::WeaponIdle()
 {
+	UpdateVModel();
+
 	if (m_flReleaseThrow == 0 && 0 != m_flStartThrow)
 		m_flReleaseThrow = gpGlobals->time;
 
@@ -230,5 +256,29 @@ void CHandGrenade::WeaponIdle()
 		}
 
 		SendWeaponAnim(iAnim);
+	}
+}
+
+//=========================================================
+// CFlashGrenade subclass
+//=========================================================
+class CFlashGrenade : public CHandGrenade
+{
+public:
+	void PrimaryAttack() override;
+
+};
+
+LINK_ENTITY_TO_CLASS(weapon_flashgrenade, CFlashGrenade);
+
+void CFlashGrenade::PrimaryAttack()
+{
+	if (0 == m_flStartThrow && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0)
+	{
+		m_flStartThrow = gpGlobals->time;
+		m_flReleaseThrow = 0;
+
+		SendWeaponAnim(HANDGRENADE_PINPULL);
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
 	}
 }

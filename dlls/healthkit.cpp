@@ -190,12 +190,24 @@ void CWallHealth::Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE us
 	// if there is no juice left, turn it off
 	if (m_iJuice <= 0)
 	{
-		pev->frame = 1;
-		Off();
+		if (m_iOn)
+		{
+			pev->frame = 1;
+			Off();
+		}
+		else
+		{
+			if (m_flSoundTime <= gpGlobals->time)
+			{
+				m_flSoundTime = gpGlobals->time + 0.62;
+				EMIT_SOUND(ENT(pev), CHAN_ITEM, "items/medshotno1.wav", 1.0, ATTN_NORM);
+			}
+			return;
+		}
 	}
 
 	// if the player doesn't have the suit, or there is no juice left, make the deny noise
-	if ((m_iJuice <= 0) || !player->HasSuit())
+	/*if ((m_iJuice <= 0) || !player->HasSuit())
 	{
 		if (m_flSoundTime <= gpGlobals->time)
 		{
@@ -203,7 +215,7 @@ void CWallHealth::Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE us
 			EMIT_SOUND(ENT(pev), CHAN_ITEM, "items/medshotno1.wav", 1.0, ATTN_NORM);
 		}
 		return;
-	}
+	}*/
 
 	pev->nextthink = pev->ltime + 0.25;
 	SetThink(&CWallHealth::Off);

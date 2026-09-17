@@ -52,3 +52,15 @@ void DLLEXPORT HUD_DrawTransparentTriangles()
 	if (g_pParticleMan)
 		g_pParticleMan->Update();
 }
+
+/*
+=================
+HUD_DrawOrthoTriangles
+Orthogonal Triangles -- (relative to resolution,
+smackdab on the screen) add them here
+=================
+*/
+void HUD_DrawOrthoTriangles(void)
+{
+	gHUD.m_Scope.DrawScope();
+}

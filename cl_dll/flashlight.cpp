@@ -64,7 +64,7 @@ bool CHudFlashlight::VidInit()
 	int HUD_flash_full = gHUD.GetSpriteIndex("flash_full");
 	int HUD_flash_beam = gHUD.GetSpriteIndex("flash_beam");
 
-	m_nvSprite = LoadSprite("sprites/of_nv_b.spr");
+	m_nvSprite = LoadSprite("sprites/of_nv_a.spr");
 
 	m_hSprite1 = gHUD.GetSprite(HUD_flash_empty);
 	m_hSprite2 = gHUD.GetSprite(HUD_flash_full);
@@ -72,7 +72,7 @@ bool CHudFlashlight::VidInit()
 	m_prc1 = &gHUD.GetSpriteRect(HUD_flash_empty);
 	m_prc2 = &gHUD.GetSpriteRect(HUD_flash_full);
 	m_prcBeam = &gHUD.GetSpriteRect(HUD_flash_beam);
-	m_iWidth = m_prc2->right - m_prc2->left;
+	m_iWidth = m_prc1->right - m_prc1->left;
 
 	return true;
 }
@@ -113,8 +113,8 @@ bool CHudFlashlight::Draw(float flTime)
 	int r, g, b, x, y, a;
 	Rect rc;
 
-	if (!gHUD.HasSuit())
-		return true;
+	/*if (!gHUD.HasSuit())
+		return true;*/
 
 	if (m_fOn)
 		a = 225;
@@ -148,12 +148,13 @@ bool CHudFlashlight::Draw(float flTime)
 	SPR_Set(m_hSprite1, r, g, b);
 	SPR_DrawAdditive(0, x, y, m_prc1);
 
+	// draw the flashlight beam
 	if (m_fOn)
-	{ // draw the flashlight beam
+	{ 
 		x = ScreenWidth - m_iWidth / 2;
 
-		SPR_Set(m_hBeam, r, g, b);
-		SPR_DrawAdditive(0, x, y, m_prcBeam);
+		// SPR_Set(m_hBeam, r, g, b);
+		// SPR_DrawAdditive(0, x, y, m_prcBeam);
 
 		drawNightVision();
 	}
@@ -190,7 +191,7 @@ void CHudFlashlight::drawNightVision()
 		const auto width = gEngfuncs.pfnSPR_Width(m_nvSprite, 0);
 		const auto height = gEngfuncs.pfnSPR_Height(m_nvSprite, 0);
 
-		gEngfuncs.pfnSPR_Set(m_nvSprite, 0, 170, 0);
+		gEngfuncs.pfnSPR_Set(m_nvSprite, 70, 0, 0);
 
 		Rect drawingRect;
 

@@ -57,7 +57,7 @@ CClassMenuPanel::CClassMenuPanel(int iTrans, bool iRemoveMe, int x, int y, int w
 {
 	// don't show class graphics at below 640x480 resolution
 	bool bShowClassGraphic = true;
-	if (ScreenWidth < 640)
+	if (ScreenWidth < 1920)
 	{
 		bShowClassGraphic = false;
 	}

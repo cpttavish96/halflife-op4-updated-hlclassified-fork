@@ -30,10 +30,17 @@ HSPRITE LoadSprite(const char* pszName)
 	int i;
 	char sz[256];
 
+	//if (ScreenWidth < 1920)
+	//	i = 320;
+	//else
+	//	i = 640;
+
 	if (ScreenWidth < 640)
 		i = 320;
-	else
+	else if (ScreenWidth < 1280)
 		i = 640;
+	else
+		i = 2560;
 
 	sprintf(sz, pszName, i);
 

@@ -29,7 +29,7 @@ CEagleLaser* CEagleLaser::CreateSpot()
 	pSpot->Spawn();
 
 	//Eagle laser is smaller
-	pSpot->pev->scale = 0.5;
+	pSpot->pev->scale = 0.15;
 
 	pSpot->pev->classname = MAKE_STRING("eagle_laser");
 
