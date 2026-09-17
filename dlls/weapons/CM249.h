@@ -73,6 +73,8 @@ public:
 
 	void SetWeaponData(const weapon_data_t& data) override;
 
+	void UpdateVModel();
+
 private:
 	static int RecalculateBody(int iClip);
 

@@ -171,6 +171,16 @@ bool CGameRules::CanHavePlayerItem(CBasePlayer* pPlayer, CBasePlayerItem* pWeapo
 		}
 	}
 
+	// CS-style slot limit: only one weapon can occupy a given inventory slot at a time.
+	// Picking up a different weapon that shares the slot silently does nothing; use the E key on it to swap instead.
+	for (CBasePlayerItem* pExisting = pPlayer->m_rgpPlayerItems[pWeapon->iItemSlot()]; pExisting; pExisting = pExisting->m_pNext)
+	{
+		if (!FClassnameIs(pExisting->pev, STRING(pWeapon->pev->classname)))
+		{
+			return false;
+		}
+	}
+
 	// note: will fall through to here if GetItemInfo doesn't fill the struct!
 	return true;
 }

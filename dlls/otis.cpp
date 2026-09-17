@@ -290,7 +290,7 @@ int COtis::ISoundMask()
 //=========================================================
 int COtis::Classify()
 {
-	return CLASS_PLAYER_ALLY;
+	return CLASS_HUMAN_MILITARY;
 }
 
 //=========================================================
@@ -380,7 +380,7 @@ void COtis::OtisFirePistol()
 	SetBlending(0, angDir.x);
 	pev->effects = EF_MUZZLEFLASH;
 
-	FireBullets(1, vecShootOrigin, vecShootDir, VECTOR_CONE_2DEGREES, 1024, BULLET_PLAYER_357);
+	FireBullets(1, vecShootOrigin, vecShootDir, VECTOR_CONE_2DEGREES, 1024, BULLET_MONSTER_12MM);
 
 	int pitchShift = RANDOM_LONG(0, 20);
 
@@ -474,7 +474,8 @@ void COtis::Spawn()
 	m_fGunDrawn = m_iOtisBody == OtisWeapon::DesertEagle;
 
 	MonsterInit();
-	SetUse(&COtis::FollowerUse);
+	SetUse(NULL);
+	// SetUse(&COtis::FollowerUse);
 }
 
 //=========================================================
@@ -852,7 +853,7 @@ class CDeadOtis : public CBaseMonster
 {
 public:
 	void Spawn() override;
-	int Classify() override { return CLASS_PLAYER_ALLY; }
+	int Classify() override { return CLASS_HUMAN_MILITARY; }
 
 	bool KeyValue(KeyValueData* pkvd) override;
 

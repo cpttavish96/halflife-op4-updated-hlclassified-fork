@@ -284,7 +284,7 @@
 		18: "Tripmine"
 		19: "Satchel Charge"
 		20: "Snark"
-		21: "Hornet Gun"
+		21: "Armor"
 	]
 	explodemagnitude(integer) : "Explode Magnitude (0=none)" : 0
 ]
@@ -1679,6 +1679,7 @@
 @PointClass size(-16 -16 0, 16 16 36) base(Weapon, Targetx) studio("models/w_oxygen.mdl") = item_airtank : "Oxygen tank" []
 @PointClass size(-16 -16 0, 16 16 36) base(Weapon, Targetx) studio("models/w_antidote.mdl") = item_antidote : "Poison antidote" []
 @PointClass size(-16 -16 0, 16 16 36) base(Weapon, Targetx) studio("models/w_battery.mdl") = item_battery : "HEV battery" []
+@PointClass size(-16 -16 0, 16 16 36) base(Weapon, Targetx) studio("models/w_armor.mdl") = item_armor : "Kevlar armor" []
 @PointClass size(-16 -16 0, 16 16 36) base(Weapon, Targetx) studio("models/w_medkit.mdl") = item_healthkit : "Small Health Kit" []
 @PointClass size(-16 -16 0, 16 16 36) base(Weapon, Targetx) studio("models/w_longjump.mdl") = item_longjump : "Longjump Module" []
 @PointClass size(-16 -16 0, 16 16 36) base(Weapon, Targetx) studio("models/w_security.mdl") = item_security : "Security card" []
@@ -1854,7 +1855,7 @@
 	body(Integer) : "Body" : 0
 ]
 @PointClass base(Monster, Sequence) size(-16 -16 0, 16 16 72) studio("models/gman.mdl") = monster_gman : "G-Man" []
-@PointClass base(Monster, Sequence) size(-16 -16 0, 16 16 72) studio("models/hgrunt.mdl") = monster_grunt_repel : "Human Grunt (Repel)" []
+@PointClass base(Monster, Sequence) size(-16 -16 0, 16 16 72) studio("models/hgrunt_opfor.mdl") = monster_grunt_repel : "Human Grunt (Repel)" []
 @PointClass base(Weapon, Targetx, RenderFields, Sequence) studio("models/w_grenade.mdl") = monster_handgrenade : "Live Handgrenade" []
 @PointClass base(Monster, Sequence) size(-16 -16 0, 16 16 36) studio("models/headcrab.mdl") = monster_headcrab : "Head Crab" []
 @PointClass base(Appearflags,RenderFields, Angles, Sequence) size(-16 -16 0, 16 16 72) = monster_hevsuit_dead : "Dead HEV Suit" 
@@ -1898,21 +1899,130 @@
 	]
 ]
 @PointClass base(Monster, Sequence) size(-16 -16 0, 16 16 72) studio("models/hassassin.mdl") = monster_human_assassin : "Human Assassin" []
-@PointClass base(Monster) size(-16 -16 0, 16 16 72) studio("models/hgrunt.mdl") = monster_human_grunt : "Human Grunt (camo)" 
+@PointClass base(Monster, Sequence) size(-16 -16 0, 16 16 72) studio("models/hassassin.mdl") = monster_fassassin_ally : "Human Assassin Ally" []
+@PointClass base(Monster) size(-16 -16 0, 16 16 72) studio("models/hgrunt_opfor.mdl") = monster_human_grunt : "Human Grunt (camo)" 
 [
 	spawnflags(Flags) =
 	[
 		32 : "SquadLeader" : 0
 	]
 	netname(string) : "Squad Name"
-	weapons(Choices) : "Weapons" : 1 =
+	weapons(Choices) : "Weapons" : 3 =
+    [
+        0 : "None"
+        1 : "9mmAR"
+        3 : "9mmAR + HG"
+        5 : "9mmAR + GL (OBSOLETE! Use monster_human_grunt_elite instead!)"
+        8 : "Shotgun"
+        10 : "Shotgun + HG"
+        16 : "Saw"
+    ]
+
+    head(Choices) : "Heads" : -1 =
+    [
+        -1 : "Default"
+         0 : "Gas Mask"
+         1 : "Beret"
+         2 : "Ops Mask"
+         3 : "Bandana White"
+         4 : "Bandana Black"
+         5 : "MP"
+         6 : "Major"
+         7 : "Beret (Black)"
+    ]
+	sequence(Choices) : "Animation Sequence (editor)" : 11 =
 	[
-		1 : "9mmAR"
-		3 : "9mmAR + HG"
-		5 : "9mmAR + GL"
-		8 : "Shotgun"
-		10 : "Shotgun + HG"
+		0 : "walk1"
+		1 : "run"
+		2 : "victorydance"
+		3 : "cower"
+		4 : "smflinch"
+		5 : "leftlegsmflinch"
+		6 : "rightlegsmflinch"
+		7 : "rightarmflinch"
+		8 : "leftarmflinch"
+		9 : "launchgrenade"
+		10 : "throwgrenade"
+		11 : "idle1"
+		12 : "idle2"
+		13 : "combatidle"
+		14 : "frontkick"
+		15 : "crouching_idle"
+		16 : "crouching_wait"
+		17 : "crouching_mp5"
+		18 : "standing_mp5"
+		19 : "reload_mp5"
+		20 : "crouching_shotgun"
+		21 : "standing_shotgun"
+		22 : "reload_shotgun"
+		23 : "advance_signal"
+		24 : "flank_signal"
+		25 : "retreat_signal"
+		26 : "drop_grenade"
+		27 : "limpingwalk"
+		28 : "limpingrun"
+		29 : "180L"
+		30 : "180R"
+		31 : "strafeleft"
+		32 : "straferight"
+		33 : "dieback1"
+		34 : "dieforward"
+		35 : "diesimple"
+		36 : "diebackwards"
+		37 : "dieheadshot"
+		38 : "diegutshot"
+		39 : "barnacled1"
+		40 : "barnacled2"
+		41 : "barnacled3"
+		42 : "barnacled4"
+		43 : "dead_on_stomach"
+		44 : "deadstomach"
+		45 : "deadside"
+		46 : "deadsitting"
+		47 : "repel_jump"
+		48 : "repel_repel"
+		49 : "repel_shoot"
+		50 : "repel_land"
+		51 : "repel_die"
+		52 : "dragholeidle"
+		53 : "draghole"
+		54 : "bustwall"
+		55 : "hoprail"
+		56 : "converse1"
+		57 : "converse2"
+		58 : "startleleft"
+		59 : "startleright"
+		60 : "divecover"
+		61 : "defuse"
+		62 : "corner1"
+		63 : "corner2"
+		64 : "stonetoss"
+		65 : "cliffdie"
+		66 : "diveaside_idle"
+		67 : "diveaside"
+		68 : "kneeldive_idle"
+		69 : "kneeldive"
+		70 : "WM_button"
+		71 : "WM_moatjump"
+		72 : "bustwindow"
+		73 : "dragleft"
+		74 : "dragright"
+		75 : "trackwave"
+		76 : "trackdive"
+		77 : "flyback"
+		78 : "impaled"
+		79 : "jumptracks"
+		80 : "pipetoss"
+		81 : "plunger"
 	]
+]
+@PointClass base(Monster) size(-16 -16 0, 16 16 72) studio("models/hgrunt_opfor_hd.mdl") = monster_human_grunt_elite : "Human Grunt with M4(camo)" 
+[
+	spawnflags(Flags) =
+	[
+		32 : "SquadLeader" : 0
+	]
+	netname(string) : "Squad Name"
 	sequence(Choices) : "Animation Sequence (editor)" : 11 =
 	[
 		0 : "walk1"
@@ -2664,8 +2774,10 @@
 
 @PointClass base(Weapon, Targetx) studio("models/w_crowbar.mdl") = weapon_crowbar : "Crowbar" []
 @PointClass base(Weapon, Targetx) studio("models/w_9mmhandgun.mdl") = weapon_9mmhandgun : "9mm Handgun" []
+@PointClass base(Weapon, Targetx) studio("models/w_elite.mdl") = weapon_elite : "9mm Handgun X2" []
 @PointClass base(Weapon, Targetx) studio("models/w_357.mdl") = weapon_357 : "357 Handgun" []
-@PointClass base(Weapon, Targetx) studio("models/w_9mmar.mdl") = weapon_9mmAR : "9mm Assault Rifle" []
+@PointClass base(Weapon, Targetx, RenderFields) studio("models/w_ump45.mdl") = weapon_9mmAR : "MP5 SMG" []
+@PointClass base(Weapon, Targetx) studio("models/w_9mmar_dual.mdl") = weapon_9mmAR_dual : "9mm Assault Rifle Dual" []
 @PointClass base(Weapon, Targetx) studio("models/w_shotgun.mdl") = weapon_shotgun : "Shotgun" []
 @PointClass base(Weapon, Targetx) studio("models/w_rpg.mdl") = weapon_rpg : "RPG" []
 @PointClass base(Weapon, Targetx) studio("models/w_gauss.mdl") = weapon_gauss : "Gauss Gun" []

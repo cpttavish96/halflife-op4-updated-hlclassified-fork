@@ -85,6 +85,8 @@ public:
 private:
 	void UpdateLaser();
 
+	void UpdateVModel();
+
 private:
 	int m_iShell;
 	unsigned short m_usFireEagle;

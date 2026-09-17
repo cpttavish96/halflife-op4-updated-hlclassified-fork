@@ -71,6 +71,8 @@ public:
 #endif
 	}
 
+	void UpdateVModel();
+
 private:
 	void RechargeAmmo(bool bLoud);
 

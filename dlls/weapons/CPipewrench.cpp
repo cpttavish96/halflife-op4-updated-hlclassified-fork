@@ -53,6 +53,7 @@ void CPipewrench::Spawn()
 void CPipewrench::Precache()
 {
 	PRECACHE_MODEL("models/v_pipe_wrench.mdl");
+	PRECACHE_MODEL("models/v_pipe_wrench_inv.mdl");
 	PRECACHE_MODEL("models/w_pipe_wrench.mdl");
 	PRECACHE_MODEL("models/p_pipe_wrench.mdl");
 	// Shepard - The commented sounds below are unused
@@ -76,7 +77,29 @@ void CPipewrench::Precache()
 
 bool CPipewrench::Deploy()
 {
+	if (m_pPlayer->m_bIsCloaked)
+		return DefaultDeploy("models/v_pipe_wrench_inv.mdl", "models/p_pipe_wrench.mdl", PIPEWRENCH_DRAW, "crowbar");
 	return DefaultDeploy("models/v_pipe_wrench.mdl", "models/p_pipe_wrench.mdl", PIPEWRENCH_DRAW, "crowbar");
+}
+
+void CPipewrench::UpdateVModel()
+{
+	if (!m_pPlayer->m_bIsCloaked)
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_pipe_wrench.mdl");
+#else
+		LoadVModel("models/v_pipe_wrench.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_pipe_wrench_inv.mdl");
+#else
+		LoadVModel("models/v_pipe_wrench_inv.mdl", m_pPlayer);
+#endif
+	}
 }
 
 void CPipewrench::Holster()
@@ -107,7 +130,6 @@ void CPipewrench::SecondaryAttack()
 		SendWeaponAnim(PIPEWRENCH_BIG_SWING_START);
 		m_flBigSwingStart = gpGlobals->time;
 	}
-
 	m_iSwingMode = SWING_START_BIG;
 
 	m_flNextPrimaryAttack = m_flNextSecondaryAttack = GetNextAttackDelay(0.1);
@@ -135,6 +157,8 @@ bool CPipewrench::Swing(const bool bFirst)
 	Vector vecEnd = vecSrc + gpGlobals->v_forward * 32;
 
 	UTIL_TraceLine(vecSrc, vecEnd, dont_ignore_monsters, ENT(m_pPlayer->pev), &tr);
+
+	UpdateVModel();
 
 #ifndef CLIENT_DLL
 	if (tr.flFraction >= 1.0)
@@ -315,6 +339,7 @@ void CPipewrench::BigSwing()
 	Vector vecEnd = vecSrc + gpGlobals->v_forward * 32;
 
 	UTIL_TraceLine(vecSrc, vecEnd, dont_ignore_monsters, ENT(m_pPlayer->pev), &tr);
+	UpdateVModel();
 
 #ifndef CLIENT_DLL
 	if (tr.flFraction >= 1.0)
@@ -460,6 +485,8 @@ void CPipewrench::BigSwing()
 
 void CPipewrench::WeaponIdle()
 {
+	UpdateVModel();
+
 	if (m_flTimeWeaponIdle > UTIL_WeaponTimeBase())
 		return;
 

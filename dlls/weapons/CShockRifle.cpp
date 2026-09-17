@@ -44,6 +44,7 @@ void CShockRifle::Precache()
 	BaseClass::Precache();
 
 	PRECACHE_MODEL("models/v_shock.mdl");
+	PRECACHE_MODEL("models/v_shock_inv.mdl");
 	PRECACHE_MODEL("models/w_shock_rifle.mdl");
 	PRECACHE_MODEL("models/p_shock.mdl");
 	m_iSpriteTexture = PRECACHE_MODEL("sprites/shockwave.spr");
@@ -103,7 +104,29 @@ bool CShockRifle::Deploy()
 		m_flRechargeTime = gpGlobals->time + 0.5;
 	}
 
+	if (m_pPlayer->m_bIsCloaked)
+		return DefaultDeploy("models/v_shock_inv.mdl", "models/p_shock.mdl", SHOCKRIFLE_DRAW, "bow");
 	return DefaultDeploy("models/v_shock.mdl", "models/p_shock.mdl", SHOCKRIFLE_DRAW, "bow");
+}
+
+void CShockRifle::UpdateVModel()
+{
+	if (!m_pPlayer->m_bIsCloaked)
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_shock.mdl");
+#else
+		LoadVModel("models/v_shock.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_shock_inv.mdl");
+#else
+		LoadVModel("models/v_shock_inv.mdl", m_pPlayer);
+#endif
+	}
 }
 
 void CShockRifle::Holster()
@@ -124,6 +147,8 @@ void CShockRifle::Holster()
 
 void CShockRifle::WeaponIdle()
 {
+	UpdateVModel();
+
 	Reload();
 
 	ResetEmptySound();
@@ -181,6 +206,7 @@ void CShockRifle::PrimaryAttack()
 
 		return;
 	}
+	UpdateVModel();
 
 	Reload();
 
@@ -287,7 +313,7 @@ void CShockRifle::RechargeAmmo(bool bLoud)
 
 int CShockRifle::iItemSlot()
 {
-	return 4;
+	return 6;
 }
 
 bool CShockRifle::GetItemInfo(ItemInfo* p)
@@ -299,8 +325,8 @@ bool CShockRifle::GetItemInfo(ItemInfo* p)
 	p->iMaxAmmo2 = WEAPON_NOCLIP;
 	p->iMaxClip = WEAPON_NOCLIP;
 	p->iFlags = ITEM_FLAG_NOAUTORELOAD | ITEM_FLAG_NOAUTOSWITCHEMPTY;
-	p->iSlot = 6;
-	p->iPosition = 1;
+	p->iSlot = 5;
+	p->iPosition = 2;
 	p->iId = m_iId = WEAPON_SHOCKRIFLE;
 	p->iWeight = SHOCKRIFLE_WEIGHT;
 	return true;

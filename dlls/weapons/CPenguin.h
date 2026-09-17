@@ -63,6 +63,8 @@ public:
 #endif
 	}
 
+	void UpdateVModel();
+
 private:
 	bool m_fJustThrown;
 	unsigned short m_usPenguinFire;

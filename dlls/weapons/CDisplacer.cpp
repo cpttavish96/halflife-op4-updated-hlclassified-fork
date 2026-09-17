@@ -39,6 +39,7 @@ LINK_ENTITY_TO_CLASS(weapon_displacer, CDisplacer);
 void CDisplacer::Precache()
 {
 	PRECACHE_MODEL("models/v_displacer.mdl");
+	PRECACHE_MODEL("models/v_displacer_inv.mdl");
 	PRECACHE_MODEL("models/w_displacer.mdl");
 	PRECACHE_MODEL("models/p_displacer.mdl");
 
@@ -73,7 +74,29 @@ void CDisplacer::Spawn()
 
 bool CDisplacer::Deploy()
 {
+	if (m_pPlayer->m_bIsCloaked)
+		return DefaultDeploy("models/v_displacer_inv.mdl", "models/p_displacer.mdl", DISPLACER_DRAW, "egon");
 	return DefaultDeploy("models/v_displacer.mdl", "models/p_displacer.mdl", DISPLACER_DRAW, "egon");
+}
+
+void CDisplacer::UpdateVModel()
+{
+	if (!m_pPlayer->m_bIsCloaked)
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_displacer.mdl");
+#else
+		LoadVModel("models/v_displacer.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_displacer_inv.mdl");
+#else
+		LoadVModel("models/v_displacer_inv.mdl", m_pPlayer);
+#endif
+	}
 }
 
 void CDisplacer::Holster()
@@ -103,6 +126,7 @@ void CDisplacer::Holster()
 void CDisplacer::WeaponIdle()
 {
 	ResetEmptySound();
+	UpdateVModel();
 
 	m_pPlayer->GetAutoaimVector(AUTOAIM_10DEGREES);
 
@@ -141,6 +165,8 @@ void CDisplacer::PrimaryAttack()
 		m_Mode = DisplacerMode::STARTED;
 
 		EMIT_SOUND(m_pPlayer->edict(), CHAN_WEAPON, "weapons/displacer_spin.wav", RANDOM_FLOAT(0.8, 0.9), ATTN_NORM);
+		
+		UpdateVModel();
 
 		m_flTimeWeaponIdle = m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 2.5;
 	}
@@ -444,8 +470,8 @@ bool CDisplacer::GetItemInfo(ItemInfo* p)
 	p->iMaxAmmo2 = WEAPON_NOCLIP;
 	p->iMaxClip = WEAPON_NOCLIP;
 	p->iFlags = 0;
-	p->iSlot = 5;
-	p->iPosition = 1;
+	p->iSlot = 3;
+	p->iPosition = 3;
 	p->iId = m_iId = WEAPON_DISPLACER;
 	p->iWeight = DISPLACER_WEIGHT;
 	return true;

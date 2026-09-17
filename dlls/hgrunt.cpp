@@ -60,16 +60,29 @@ int g_fGruntQuestion; // true if an idle grunt asked a question. Cleared when so
 #define HGRUNT_HANDGRENADE (1 << 1)
 #define HGRUNT_GRENADELAUNCHER (1 << 2)
 #define HGRUNT_SHOTGUN (1 << 3)
+#define HGRUNT_SAW (1 << 4)
 
 #define HEAD_GROUP 1
-#define HEAD_GRUNT 0
-#define HEAD_COMMANDER 1
-#define HEAD_SHOTGUN 2
-#define HEAD_M203 3
-#define GUN_GROUP 2
+#define HEAD_GASMASK 0			// gasmask
+#define HEAD_BERRET_W 1			// beret white
+#define HEAD_SHOTGUN 2			// balaclava
+#define HEAD_RAG_W 3			// rag white
+#define HEAD_RAG_B 4			// rag black
+#define HEAD_MP_HELMET 5		// MP helmet
+#define HEAD_BERRET_STACHE 6	// MP helmet
+#define HEAD_BERRET_B 7			// beret black
+
+#define TORSO_GROUP 2
+#define TORSO_GRUNT 0
+#define TORSO_HEAVY 1
+#define TORSO_BACKPACKLESS 2
+#define TORSO_SHOTGUNNER 3
+
+#define GUN_GROUP 3
 #define GUN_MP5 0
 #define GUN_SHOTGUN 1
-#define GUN_NONE 2
+#define GUN_SAW 2
+#define GUN_NONE 3
 
 //=========================================================
 // Monster's Anim Events Go Here
@@ -183,6 +196,8 @@ public:
 	int m_iSentence;
 
 	static const char* pGruntSentences[];
+
+	bool m_bHasDroppedWweapon = false;
 };
 
 LINK_ENTITY_TO_CLASS(monster_human_grunt, CHGrunt);
@@ -281,10 +296,29 @@ void CHGrunt::GibMonster()
 	{ // throw a gun if the grunt has one
 		GetAttachment(0, vecGunPos, vecGunAngles);
 
+		if (m_bHasDroppedWweapon)
+		{
+			return;
+		}
+
 		CBaseEntity* pGun;
 		if (FBitSet(pev->weapons, HGRUNT_SHOTGUN))
 		{
 			pGun = DropItem("weapon_shotgun", vecGunPos, vecGunAngles);
+		}
+		else if (FBitSet(pev->weapons, HGRUNT_9MMAR) && FBitSet(pev->weapons, HGRUNT_GRENADELAUNCHER))
+		{
+			pGun = DropItem("weapon_m4", vecGunPos, vecGunAngles);
+			CBaseEntity* pARGrenades = DropItem("ammo_ARgrenades", vecGunPos, vecGunAngles);
+			if (pARGrenades)
+			{
+				pARGrenades->pev->velocity = Vector(RANDOM_FLOAT(-100, 100), RANDOM_FLOAT(-100, 100), RANDOM_FLOAT(200, 300));
+				pARGrenades->pev->avelocity = Vector(0, RANDOM_FLOAT(200, 400), 0);
+			}
+		}
+		else if (FBitSet(pev->weapons, HGRUNT_SAW))
+		{
+			pGun = DropItem("weapon_m249", vecGunPos, vecGunAngles);
 		}
 		else
 		{
@@ -295,16 +329,7 @@ void CHGrunt::GibMonster()
 			pGun->pev->velocity = Vector(RANDOM_FLOAT(-100, 100), RANDOM_FLOAT(-100, 100), RANDOM_FLOAT(200, 300));
 			pGun->pev->avelocity = Vector(0, RANDOM_FLOAT(200, 400), 0);
 		}
-
-		if (FBitSet(pev->weapons, HGRUNT_GRENADELAUNCHER))
-		{
-			pGun = DropItem("ammo_ARgrenades", vecGunPos, vecGunAngles);
-			if (pGun)
-			{
-				pGun->pev->velocity = Vector(RANDOM_FLOAT(-100, 100), RANDOM_FLOAT(-100, 100), RANDOM_FLOAT(200, 300));
-				pGun->pev->avelocity = Vector(0, RANDOM_FLOAT(200, 400), 0);
-			}
-		}
+		m_bHasDroppedWweapon = true;
 	}
 
 	CBaseMonster::GibMonster();
@@ -605,7 +630,7 @@ void CHGrunt::TraceAttack(entvars_t* pevAttacker, float flDamage, Vector vecDir,
 	if (ptr->iHitgroup == 11)
 	{
 		// make sure we're wearing one
-		if (GetBodygroup(1) == HEAD_GRUNT && (bitsDamageType & (DMG_BULLET | DMG_SLASH | DMG_BLAST | DMG_CLUB)) != 0)
+		if (GetBodygroup(1) == HEAD_GASMASK || HEAD_MP_HELMET && (bitsDamageType & (DMG_BULLET | DMG_SLASH | DMG_BLAST | DMG_CLUB)) != 0)
 		{
 			// absorb damage
 			flDamage -= 20;
@@ -796,6 +821,7 @@ void CHGrunt::Shoot()
 
 	Vector vecShellVelocity = gpGlobals->v_right * RANDOM_FLOAT(40, 90) + gpGlobals->v_up * RANDOM_FLOAT(75, 200) + gpGlobals->v_forward * RANDOM_FLOAT(-40, 40);
 	EjectBrass(vecShootOrigin - vecShootDir * 24, vecShellVelocity, pev->angles.y, m_iBrassShell, TE_BOUNCE_SHELL);
+
 	FireBullets(1, vecShootOrigin, vecShootDir, VECTOR_CONE_10DEGREES, 2048, BULLET_MONSTER_MP5); // shoot +-5 degrees
 
 	pev->effects |= EF_MUZZLEFLASH;
@@ -857,24 +883,36 @@ void CHGrunt::HandleAnimEvent(MonsterEvent_t* pEvent)
 			SetBodygroup(GUN_GROUP, GUN_NONE);
 
 			// now spawn a gun.
-			if (FBitSet(pev->weapons, HGRUNT_SHOTGUN))
-			{
-				DropItem("weapon_shotgun", vecGunPos, vecGunAngles);
-			}
-			else
-			{
-				DropItem("weapon_9mmAR", vecGunPos, vecGunAngles);
-			}
+			
 			if (FBitSet(pev->weapons, HGRUNT_GRENADELAUNCHER))
 			{
+				DropItem("weapon_m4", vecGunPos, vecGunAngles);
 				DropItem("ammo_ARgrenades", BodyTarget(pev->origin), vecGunAngles);
 			}
+			else {
+				if (FBitSet(pev->weapons, HGRUNT_SHOTGUN))
+				{
+					DropItem("weapon_shotgun", vecGunPos, vecGunAngles);
+				}
+				else if (FBitSet(pev->weapons, HGRUNT_SAW))
+				{
+					DropItem("weapon_m249", vecGunPos, vecGunAngles);
+				}
+				else
+				{
+					DropItem("weapon_9mmAR", vecGunPos, vecGunAngles);
+				}
+			}
+			m_bHasDroppedWweapon = true;
 		}
 	}
 	break;
 
 	case HGRUNT_AE_RELOAD:
-		EMIT_SOUND(ENT(pev), CHAN_WEAPON, "hgrunt/gr_reload1.wav", 1, ATTN_NORM);
+		if (FBitSet(pev->weapons, HGRUNT_SAW))
+			EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/saw_reload.wav", 1, ATTN_NORM);
+		else 
+			EMIT_SOUND(ENT(pev), CHAN_WEAPON, "hgrunt/gr_reload1.wav", 1, ATTN_NORM);
 		m_cAmmoLoaded = m_cClipSize;
 		ClearConditions(bits_COND_NO_AMMO_LOADED);
 		break;
@@ -916,14 +954,46 @@ void CHGrunt::HandleAnimEvent(MonsterEvent_t* pEvent)
 		{
 			Shoot();
 
-			// the first round of the three round burst plays the sound and puts a sound in the world sound list.
+			if (!FBitSet(pev->weapons, HGRUNT_GRENADELAUNCHER))
+			{
+				switch (RANDOM_LONG(0, 2))
+				{
+					case 0:
+						EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/hks1.wav", 1, ATTN_NORM);
+						break;
+					case 1:
+						EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/hks2.wav", 1, ATTN_NORM);
+						break;
+					case 2:
+						EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/hks3.wav", 1, ATTN_NORM);
+						break;
+				}
+			}
+			else {
+				switch (RANDOM_LONG(0, 2))
+				{
+					case 0:
+						EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/m41.wav", 1, ATTN_NORM);
+						break;
+					case 1:
+						EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/m42.wav", 1, ATTN_NORM);
+						break;
+					case 2:
+						EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/m43.wav", 1, ATTN_NORM);
+						break;
+				}
+			}
+		}
+		else if (FBitSet(pev->weapons, HGRUNT_SAW))
+		{
+
 			if (RANDOM_LONG(0, 1))
 			{
-				EMIT_SOUND(ENT(pev), CHAN_WEAPON, "hgrunt/gr_mgun1.wav", 1, ATTN_NORM);
+				EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/saw_fire1.wav", 1, ATTN_NORM);
 			}
 			else
 			{
-				EMIT_SOUND(ENT(pev), CHAN_WEAPON, "hgrunt/gr_mgun2.wav", 1, ATTN_NORM);
+				EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/saw_fire2.wav", 1, ATTN_NORM);
 			}
 		}
 		else
@@ -980,7 +1050,7 @@ void CHGrunt::Spawn()
 {
 	Precache();
 
-	SET_MODEL(ENT(pev), "models/hgrunt.mdl");
+	SET_MODEL(ENT(pev), "models/hgrunt_opfor.mdl");
 	UTIL_SetSize(pev, VEC_HUMAN_HULL_MIN, VEC_HUMAN_HULL_MAX);
 
 	pev->solid = SOLID_SLIDEBOX;
@@ -1003,10 +1073,7 @@ void CHGrunt::Spawn()
 
 	if (pev->weapons == 0)
 	{
-		// initialize to original values
 		pev->weapons = HGRUNT_9MMAR | HGRUNT_HANDGRENADE;
-		// pev->weapons = HGRUNT_SHOTGUN;
-		// pev->weapons = HGRUNT_9MMAR | HGRUNT_GRENADELAUNCHER;
 	}
 
 	if (FBitSet(pev->weapons, HGRUNT_SHOTGUN))
@@ -1014,25 +1081,68 @@ void CHGrunt::Spawn()
 		SetBodygroup(GUN_GROUP, GUN_SHOTGUN);
 		m_cClipSize = 8;
 	}
+	else if (FBitSet(pev->weapons, HGRUNT_SAW))
+	{
+		SetBodygroup(GUN_GROUP, GUN_SAW);
+		m_cClipSize = GRUNT_CLIP_SIZE;
+	}
 	else
 	{
+		SetBodygroup(GUN_GROUP, GUN_MP5);
 		m_cClipSize = GRUNT_CLIP_SIZE;
 	}
 	m_cAmmoLoaded = m_cClipSize;
 
-	if (RANDOM_LONG(0, 99) < 80)
-		pev->skin = 0; // light skin
-	else
-		pev->skin = 1; // dark skin
+	if (IsLeader()) {
+		switch (RANDOM_LONG(0, 2))
+		{
+		case 0:
+			SetBodygroup(HEAD_GROUP, HEAD_BERRET_B);
+			m_voicePitch -= RANDOM_LONG(5,15);
+			break;
+		case 1:
+			SetBodygroup(HEAD_GROUP, HEAD_BERRET_STACHE);
+			break;
+		case 2:
+			SetBodygroup(HEAD_GROUP, HEAD_BERRET_W);
+			break;
+		}
+	}
+	else {
+		switch (RANDOM_LONG(0, 4))
+		{
+		case 0:
+			SetBodygroup(HEAD_GROUP, HEAD_GASMASK);
+			break;
+		case 1:
+			SetBodygroup(HEAD_GROUP, HEAD_SHOTGUN);
+			m_voicePitch -= RANDOM_LONG(5, 15);
+			break;
+		case 2:
+			SetBodygroup(HEAD_GROUP, HEAD_RAG_W);
+			break;
+		case 3:
+			SetBodygroup(HEAD_GROUP, HEAD_RAG_B);
+			m_voicePitch -= RANDOM_LONG(5, 15);
+			break;
+		case 4:
+			SetBodygroup(HEAD_GROUP, HEAD_MP_HELMET);
+			break;
+		}
+	}
 
 	if (FBitSet(pev->weapons, HGRUNT_SHOTGUN))
 	{
-		SetBodygroup(HEAD_GROUP, HEAD_SHOTGUN);
+		SetBodygroup(TORSO_GROUP, TORSO_SHOTGUNNER);
 	}
-	else if (FBitSet(pev->weapons, HGRUNT_GRENADELAUNCHER))
+	else if (FBitSet(pev->weapons, HGRUNT_SAW))
 	{
-		SetBodygroup(HEAD_GROUP, HEAD_M203);
-		pev->skin = 1; // alway dark skin
+		SetBodygroup(TORSO_GROUP, TORSO_HEAVY);
+		pev->health = gSkillData.hgruntHealth * 2;
+	}
+	else
+	{
+		SetBodygroup(TORSO_GROUP, TORSO_GRUNT);
 	}
 
 	CTalkMonster::g_talkWaitTime = 0;
@@ -1045,10 +1155,21 @@ void CHGrunt::Spawn()
 //=========================================================
 void CHGrunt::Precache()
 {
-	PRECACHE_MODEL("models/hgrunt.mdl");
+	PRECACHE_MODEL("models/hgrunt_opfor.mdl");
+	PRECACHE_MODEL("models/hgrunt_opfor_hd.mdl");
+	PRECACHE_MODEL("models/hgrunt_medic.mdl");
+	PRECACHE_MODEL("models/hgrunt_torch.mdl");
 
-	PRECACHE_SOUND("hgrunt/gr_mgun1.wav");
-	PRECACHE_SOUND("hgrunt/gr_mgun2.wav");
+	PRECACHE_SOUND("weapons/hks1.wav");
+	PRECACHE_SOUND("weapons/hks2.wav");
+	PRECACHE_SOUND("weapons/hks3.wav");
+	PRECACHE_SOUND("weapons/m41.wav");
+	PRECACHE_SOUND("weapons/m42.wav");
+	PRECACHE_SOUND("weapons/m43.wav");
+	PRECACHE_SOUND("weapons/saw_fire1.wav");
+	PRECACHE_SOUND("weapons/saw_fire2.wav");
+	PRECACHE_SOUND("weapons/saw_fire3.wav");
+	PRECACHE_SOUND("weapons/saw_reload.wav");
 
 	PRECACHE_SOUND("hgrunt/gr_die1.wav");
 	PRECACHE_SOUND("hgrunt/gr_die2.wav");
@@ -1831,15 +1952,44 @@ void CHGrunt::SetActivity(Activity NewActivity)
 		// grunt is either shooting standing or shooting crouched
 		if (FBitSet(pev->weapons, HGRUNT_9MMAR))
 		{
+			if (!FBitSet(pev->weapons, HGRUNT_GRENADELAUNCHER))
+			{
+				if (m_fStanding)
+				{
+					// get aimable sequence
+					iSequence = LookupSequence("standing_mp5");
+				}
+				else
+				{
+					// get crouching shoot
+					iSequence = LookupSequence("crouching_mp5");
+				}
+			}
+			else
+			{
+				if (m_fStanding)
+				{
+					// get aimable sequence
+					iSequence = LookupSequence("crouching_mp5");
+				}
+				else
+				{
+					// get crouching shoot
+					iSequence = LookupSequence("crouching_mp5");
+				}
+			}
+		}
+		else if (FBitSet(pev->weapons, HGRUNT_SAW))
+		{
 			if (m_fStanding)
 			{
 				// get aimable sequence
-				iSequence = LookupSequence("standing_mp5");
+				iSequence = LookupSequence("standing_saw");
 			}
 			else
 			{
 				// get crouching shoot
-				iSequence = LookupSequence("crouching_mp5");
+				iSequence = LookupSequence("crouching_saw");
 			}
 		}
 		else
@@ -2386,7 +2536,67 @@ void CHGruntRepel::RepelUse(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_T
 	UTIL_Remove(this);
 }
 
+//=========================================================
+// CEliteHGrunt subclass
+//=========================================================
+class CEliteHGrunt : public CHGrunt
+{
+public:
+	void Spawn() override;
+};
 
+LINK_ENTITY_TO_CLASS(monster_human_grunt_elite, CEliteHGrunt);
+
+void CEliteHGrunt::Spawn()
+{
+	Precache();
+
+	SET_MODEL(ENT(pev), "models/hgrunt_opfor_hd.mdl");
+	UTIL_SetSize(pev, VEC_HUMAN_HULL_MIN, VEC_HUMAN_HULL_MAX);
+
+	pev->solid = SOLID_SLIDEBOX;
+	pev->movetype = MOVETYPE_STEP;
+	m_bloodColor = BLOOD_COLOR_RED;
+	pev->effects = 0;
+	pev->health = gSkillData.hgruntHealth;
+	m_flFieldOfView = 0.2; // indicates the width of this monster's forward view cone ( as a dotproduct result )
+	m_MonsterState = MONSTERSTATE_NONE;
+	m_flNextGrenadeCheck = gpGlobals->time + 1;
+	m_flNextPainTime = gpGlobals->time;
+	m_iSentence = HGRUNT_SENT_NONE;
+
+	m_afCapability = bits_CAP_SQUAD | bits_CAP_TURN_HEAD | bits_CAP_DOORS_GROUP;
+
+	m_fEnemyEluded = false;
+	m_fFirstEncounter = true; // this is true when the grunt spawns, because he hasn't encountered an enemy yet.
+
+	m_HackedGunPos = Vector(0, 0, 55);
+
+	pev->weapons = HGRUNT_9MMAR | HGRUNT_GRENADELAUNCHER;
+
+	SetBodygroup(GUN_GROUP, GUN_MP5);
+	m_cClipSize = GRUNT_CLIP_SIZE;
+	m_cAmmoLoaded = m_cClipSize;
+	
+	switch (RANDOM_LONG(0, 2))
+	{
+	case 0:
+		SetBodygroup(HEAD_GROUP, HEAD_BERRET_B);
+		m_voicePitch -= RANDOM_LONG(5, 15);
+		break;
+	case 1:
+		SetBodygroup(HEAD_GROUP, HEAD_BERRET_STACHE);
+		break;
+	case 2:
+		SetBodygroup(HEAD_GROUP, HEAD_BERRET_W);
+		break;
+	}
+
+	SetBodygroup(TORSO_GROUP, TORSO_GRUNT);
+	CTalkMonster::g_talkWaitTime = 0;
+
+	MonsterInit();
+}
 
 //=========================================================
 // DEAD HGRUNT PROP
@@ -2423,8 +2633,8 @@ LINK_ENTITY_TO_CLASS(monster_hgrunt_dead, CDeadHGrunt);
 //=========================================================
 void CDeadHGrunt::Spawn()
 {
-	PRECACHE_MODEL("models/hgrunt.mdl");
-	SET_MODEL(ENT(pev), "models/hgrunt.mdl");
+	PRECACHE_MODEL("models/hgrunt_opfor.mdl");
+	SET_MODEL(ENT(pev), "models/hgrunt_opfor.mdl");
 
 	pev->effects = 0;
 	pev->yaw_speed = 8;
@@ -2440,33 +2650,56 @@ void CDeadHGrunt::Spawn()
 
 	// Corpses have less health
 	pev->health = 8;
+	pev->body = 0;
+	pev->skin = 0;
+	
+	if (FBitSet(pev->weapons, HGRUNT_SHOTGUN)) {
+
+		SetBodygroup(GUN_GROUP, GUN_SHOTGUN);
+		SetBodygroup(TORSO_GROUP, TORSO_SHOTGUNNER);
+	}
+	else if (FBitSet(pev->weapons, HGRUNT_9MMAR))
+	{
+		SetBodygroup(GUN_GROUP, GUN_MP5);
+		SetBodygroup(TORSO_GROUP, TORSO_GRUNT);
+	}
+	else if (FBitSet(pev->weapons, HGRUNT_SAW))
+	{
+		SetBodygroup(GUN_GROUP, GUN_SAW);
+		SetBodygroup(TORSO_GROUP, TORSO_HEAVY);
+	}
+	else
+	{
+		SetBodygroup(GUN_GROUP, GUN_NONE);
+		SetBodygroup(TORSO_GROUP, TORSO_BACKPACKLESS);
+	}
 
 	// map old bodies onto new bodies
-	switch (pev->body)
+	switch (RANDOM_LONG(0, 7))
 	{
-	case 0: // Grunt with Gun
-		pev->body = 0;
-		pev->skin = 0;
-		SetBodygroup(HEAD_GROUP, HEAD_GRUNT);
-		SetBodygroup(GUN_GROUP, GUN_MP5);
+	case 0:
+		SetBodygroup(HEAD_GROUP, HEAD_GASMASK);
 		break;
-	case 1: // Commander with Gun
-		pev->body = 0;
-		pev->skin = 0;
-		SetBodygroup(HEAD_GROUP, HEAD_COMMANDER);
-		SetBodygroup(GUN_GROUP, GUN_MP5);
+	case 1:
+		SetBodygroup(HEAD_GROUP, HEAD_BERRET_W);
 		break;
-	case 2: // Grunt no Gun
-		pev->body = 0;
-		pev->skin = 0;
-		SetBodygroup(HEAD_GROUP, HEAD_GRUNT);
-		SetBodygroup(GUN_GROUP, GUN_NONE);
+	case 2:
+		SetBodygroup(HEAD_GROUP, HEAD_SHOTGUN);
 		break;
-	case 3: // Commander no Gun
-		pev->body = 0;
-		pev->skin = 0;
-		SetBodygroup(HEAD_GROUP, HEAD_COMMANDER);
-		SetBodygroup(GUN_GROUP, GUN_NONE);
+	case 3:
+		SetBodygroup(HEAD_GROUP, HEAD_RAG_W);
+		break;
+	case 4:
+		SetBodygroup(HEAD_GROUP, HEAD_RAG_B);
+		break;
+	case 5:
+		SetBodygroup(HEAD_GROUP, HEAD_MP_HELMET);
+		break;
+	case 6:
+		SetBodygroup(HEAD_GROUP, HEAD_BERRET_STACHE);
+		break;
+	case 7:
+		SetBodygroup(HEAD_GROUP, HEAD_BERRET_B);
 		break;
 	}
 

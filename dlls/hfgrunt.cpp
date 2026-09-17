@@ -64,10 +64,10 @@ extern DLL_GLOBAL int g_iSkillLevel;
 #define HGRUNT_SHOTGUN (1 << 3)
 
 #define HEAD_GROUP 1
-#define HEAD_GRUNT 0
-#define HEAD_COMMANDER 1
+#define HEAD_GASMASK 0
+#define HEAD_BERRET_W 1
 #define HEAD_SHOTGUN 2
-#define HEAD_M203 3
+#define HEAD_RAG_W 3
 #define GUN_GROUP 2
 #define GUN_MP5 0
 #define GUN_SHOTGUN 1
@@ -611,7 +611,7 @@ void CHFGrunt::TraceAttack(entvars_t* pevAttacker, float flDamage, Vector vecDir
 	if (ptr->iHitgroup == 11)
 	{
 		// make sure we're wearing one
-		if (GetBodygroup(1) == HEAD_GRUNT && (bitsDamageType & (DMG_BULLET | DMG_SLASH | DMG_BLAST | DMG_CLUB)) != 0)
+		if (GetBodygroup(1) == HEAD_GASMASK && (bitsDamageType & (DMG_BULLET | DMG_SLASH | DMG_BLAST | DMG_CLUB)) != 0)
 		{
 			// absorb damage
 			flDamage -= 20;
@@ -1033,7 +1033,7 @@ void CHFGrunt::Spawn()
 	}
 	else if (FBitSet(pev->weapons, HGRUNT_GRENADELAUNCHER))
 	{
-		SetBodygroup(HEAD_GROUP, HEAD_M203);
+		SetBodygroup(HEAD_GROUP, HEAD_RAG_W);
 		pev->skin = 1; // alway dark skin
 	}
 
@@ -2449,25 +2449,25 @@ void CDeadHFGrunt::Spawn()
 	case 0: // Grunt with Gun
 		pev->body = 0;
 		pev->skin = 0;
-		SetBodygroup(HEAD_GROUP, HEAD_GRUNT);
+		SetBodygroup(HEAD_GROUP, HEAD_GASMASK);
 		SetBodygroup(GUN_GROUP, GUN_MP5);
 		break;
 	case 1: // Commander with Gun
 		pev->body = 0;
 		pev->skin = 0;
-		SetBodygroup(HEAD_GROUP, HEAD_COMMANDER);
+		SetBodygroup(HEAD_GROUP, HEAD_BERRET_W);
 		SetBodygroup(GUN_GROUP, GUN_MP5);
 		break;
 	case 2: // Grunt no Gun
 		pev->body = 0;
 		pev->skin = 0;
-		SetBodygroup(HEAD_GROUP, HEAD_GRUNT);
+		SetBodygroup(HEAD_GROUP, HEAD_GASMASK);
 		SetBodygroup(GUN_GROUP, GUN_NONE);
 		break;
 	case 3: // Commander no Gun
 		pev->body = 0;
 		pev->skin = 0;
-		SetBodygroup(HEAD_GROUP, HEAD_COMMANDER);
+		SetBodygroup(HEAD_GROUP, HEAD_BERRET_W);
 		SetBodygroup(GUN_GROUP, GUN_NONE);
 		break;
 	}

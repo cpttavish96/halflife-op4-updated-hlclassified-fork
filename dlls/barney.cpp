@@ -1,17 +1,17 @@
 /***
-*
-*	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
-*	All Rights Reserved.
-*
-*   This source code contains proprietary and confidential information of
-*   Valve LLC and its suppliers.  Access to this code is restricted to
-*   persons who have executed a written SDK license with Valve.  Any access,
-*   use or distribution of this code by or to any unlicensed person is illegal.
-*
-****/
+ *
+ *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
+ *
+ *	This product contains software technology licensed from Id
+ *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
+ *	All Rights Reserved.
+ *
+ *   This source code contains proprietary and confidential information of
+ *   Valve LLC and its suppliers.  Access to this code is restricted to
+ *   persons who have executed a written SDK license with Valve.  Any access,
+ *   use or distribution of this code by or to any unlicensed person is illegal.
+ *
+ ****/
 //=========================================================
 // monster template
 //=========================================================
@@ -185,8 +185,8 @@ Schedule_t slIdleBaStand[] =
 				bits_COND_PROVOKED,
 
 			bits_SOUND_COMBAT | // sound flags - change these, and you'll break the talking code.
-				//bits_SOUND_PLAYER		|
-				//bits_SOUND_WORLD		|
+								// bits_SOUND_PLAYER		|
+								// bits_SOUND_WORLD		|
 
 				bits_SOUND_DANGER |
 				bits_SOUND_MEAT | // scents
@@ -251,7 +251,7 @@ int CBarney::ISoundMask()
 //=========================================================
 int CBarney::Classify()
 {
-	return CLASS_PLAYER_ALLY;
+	return CLASS_HUMAN_MILITARY;
 }
 
 //=========================================================
@@ -413,7 +413,8 @@ void CBarney::Spawn()
 	m_afCapability = bits_CAP_HEAR | bits_CAP_TURN_HEAD | bits_CAP_DOORS_GROUP;
 
 	MonsterInit();
-	SetUse(&CBarney::FollowerUse);
+	SetUse(NULL);
+	// SetUse(&CBarney::FollowerUse);
 }
 
 //=========================================================
@@ -602,7 +603,7 @@ void CBarney::Killed(entvars_t* pevAttacker, int iGib)
 
 		GetAttachment(0, vecGunPos, vecGunAngles);
 
-		CBaseEntity* pGun = DropItem("weapon_9mmhandgun", vecGunPos, vecGunAngles);
+		CBaseEntity* pGun = DropItem("weapon_elite", vecGunPos, vecGunAngles);
 	}
 
 	SetUse(NULL);
@@ -773,7 +774,7 @@ class CDeadBarney : public CBaseMonster
 {
 public:
 	void Spawn() override;
-	int Classify() override { return CLASS_PLAYER_ALLY; }
+	int Classify() override { return CLASS_HUMAN_MILITARY; }
 
 	bool KeyValue(KeyValueData* pkvd) override;
 
@@ -815,7 +816,7 @@ void CDeadBarney::Spawn()
 		ALERT(at_console, "Dead barney with bad pose\n");
 	}
 	// Corpses have less health
-	pev->health = 8; //gSkillData.barneyHealth;
+	pev->health = 8; // gSkillData.barneyHealth;
 
 	MonsterInitDead();
 }

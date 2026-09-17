@@ -209,8 +209,8 @@ bool CHudHealth::Draw(float flTime)
 	ScaleColors(r, g, b, a);
 
 	// Only draw health if we have the suit.
-	if (gHUD.HasSuit())
-	{
+	// if (gHUD.HasSuit())
+	// {
 		HealthWidth = gHUD.GetSpriteRect(gHUD.m_HUD_number_0).right - gHUD.GetSpriteRect(gHUD.m_HUD_number_0).left;
 		int CrossWidth = gHUD.GetSpriteRect(m_HUD_cross).right - gHUD.GetSpriteRect(m_HUD_cross).left;
 
@@ -253,7 +253,7 @@ bool CHudHealth::Draw(float flTime)
 		}
 
 		FillRGBA(x, y, iWidth, iHeight, barR, barG, barB, a);
-	}
+	//}
 
 	DrawDamage(flTime);
 	return DrawPain(flTime);

@@ -78,6 +78,8 @@ public:
 #endif
 	}
 
+	void UpdateVModel();
+
 private:
 	void Fire(const Vector& vecOrigin, const Vector& vecDir);
 	void EndAttack();

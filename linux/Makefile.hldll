@@ -50,11 +50,13 @@ HLDLL_OBJS = \
 	$(WEAPONS_OBJ_DIR)/CDisplacer.o \
 	$(WEAPONS_OBJ_DIR)/CDisplacerBall.o \
 	$(WEAPONS_OBJ_DIR)/CEagle.o \
+	$(WEAPONS_OBJ_DIR)/CElite.o \
 	$(WEAPONS_OBJ_DIR)/CEagleLaser.o \
 	$(WEAPONS_OBJ_DIR)/CGrapple.o \
 	$(WEAPONS_OBJ_DIR)/CGrappleTip.o \
 	$(WEAPONS_OBJ_DIR)/CKnife.o \
 	$(WEAPONS_OBJ_DIR)/CM249.o \
+	$(WEAPONS_OBJ_DIR)/CM4.o \
 	$(WEAPONS_OBJ_DIR)/CPenguin.o \
 	$(WEAPONS_OBJ_DIR)/CPipewrench.o \
 	$(WEAPONS_OBJ_DIR)/CShockBeam.o \
@@ -97,6 +99,7 @@ HLDLL_OBJS = \
 	$(HLDLL_OBJ_DIR)/ehandle.o \
 	$(HLDLL_OBJ_DIR)/egon.o \
 	$(HLDLL_OBJ_DIR)/explode.o \
+	$(HLDLL_OBJ_DIR)/fassassin.o \
 	$(HLDLL_OBJ_DIR)/flyingmonster.o \
 	$(HLDLL_OBJ_DIR)/func_break.o \
 	$(HLDLL_OBJ_DIR)/func_tank.o \
@@ -106,9 +109,11 @@ HLDLL_OBJS = \
 	$(HLDLL_OBJ_DIR)/gargantua.o \
 	$(HLDLL_OBJ_DIR)/gauss.o \
 	$(HLDLL_OBJ_DIR)/genericmonster.o \
+	$(HLDLL_OBJ_DIR)/geneworm.o \
 	$(HLDLL_OBJ_DIR)/ggrenade.o \
 	$(HLDLL_OBJ_DIR)/glock.o \
 	$(HLDLL_OBJ_DIR)/gman.o \
+	$(HLDLL_OBJ_DIR)/gonome.o \
 	$(HLDLL_OBJ_DIR)/h_ai.o \
 	$(HLDLL_OBJ_DIR)/h_battery.o \
 	$(HLDLL_OBJ_DIR)/h_cine.o \

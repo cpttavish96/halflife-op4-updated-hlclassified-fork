@@ -91,7 +91,8 @@ void CGrenade::DetonateUse(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TY
 void UTIL_Remove(CBaseEntity* pEntity) {}
 void UTIL_SetSize(entvars_t* pev, const Vector& vecMin, const Vector& vecMax) {}
 CBaseEntity* UTIL_FindEntityInSphere(CBaseEntity* pStartEntity, const Vector& vecCenter, float flRadius) { return 0; }
-
+const Vector& CBeam::GetStartPos() { return pev->origin; }
+const Vector& CBeam::GetEndPos() { return pev->angles; }
 Vector UTIL_VecToAngles(const Vector& vec) { return 0; }
 CSprite* CSprite::SpriteCreate(const char* pSpriteName, const Vector& origin, bool animate) { return 0; }
 void CBeam::PointEntInit(const Vector& start, int endIndex) {}
@@ -320,6 +321,10 @@ void CBasePlayerItem::Drop() {}
 void CBasePlayerItem::Kill() {}
 void CBasePlayerItem::Holster() {}
 void CBasePlayerItem::AttachToPlayer(CBasePlayer* pPlayer) {}
+int CBasePlayerItem::ObjectCaps() { return 0; }
+void CBasePlayerItem::Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value) {}
+void CBasePlayerItem::PlayPickupSound(CBasePlayer* pPlayer) {}
+void CBasePlayerItem::EjectToWorld(const Vector& origin, const Vector& velocity) {}
 bool CBasePlayerWeapon::AddDuplicate(CBasePlayerItem* pOriginal) { return false; }
 void CBasePlayerWeapon::AddToPlayer(CBasePlayer* pPlayer) {}
 bool CBasePlayerWeapon::UpdateClientData(CBasePlayer* pPlayer) { return false; }

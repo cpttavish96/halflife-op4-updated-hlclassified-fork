@@ -1610,8 +1610,6 @@ void CBasePlayer::PlayerUse()
 	}
 }
 
-
-
 void CBasePlayer::Jump()
 {
 	Vector vecWallCheckDir; // direction we're tracing a line to find a wall when walljumping
@@ -1627,21 +1625,42 @@ void CBasePlayer::Jump()
 		return;
 	}
 
-	// jump velocity is sqrt( height * gravity * 2)
-
 	// If this isn't the first frame pressing the jump button, break out.
 	if (!FBitSet(m_afButtonPressed, IN_JUMP))
 		return; // don't pogo stick
 
 	if ((pev->flags & FL_ONGROUND) == 0 || !pev->groundentity)
 	{
+		// Check if double jump is allowed
+		if (m_bDoubleJumpUsed)
+			return;
+
+		// Execute double jump
+		SetAnimation(PLAYER_JUMP);
+
+		float flRndSound; // sound randomizer
+
+		flRndSound = RANDOM_FLOAT(0, 1);
+
+		if (flRndSound <= 0.33)
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_jump1.wav", 1, ATTN_NORM);
+		else if (flRndSound <= 0.66)
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_jump2.wav", 1, ATTN_NORM);
+		else
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_jump3.wav", 1, ATTN_NORM);
+		
+		// Pain();
+		pev->punchangle.x -= 2;
+		pev->velocity.z += (sqrt(2 * 800 * 45) * 1.1); // Adjust the value based on your game's jump height and gravity
+		m_bDoubleJumpUsed = true;
 		return;
 	}
 
+	// Player is on the ground, so jump normally
 	// many features in this function use v_forward, so makevectors now.
 	UTIL_MakeVectors(pev->angles);
 
-	// ClearBits(pev->flags, FL_ONGROUND);		// don't stairwalk
+	// ClearBits(pev->flags, FL_ONGROUND);        // don't stairwalk
 
 	SetAnimation(PLAYER_JUMP);
 
@@ -1653,12 +1672,15 @@ void CBasePlayer::Jump()
 		SetAnimation(PLAYER_SUPERJUMP);
 	}
 
-	// If you're standing on a conveyor, add it's velocity to yours (for momentum)
+	// If you're standing on a conveyor, add its velocity to yours (for momentum)
 	entvars_t* pevGround = VARS(pev->groundentity);
 	if (pevGround && (pevGround->flags & FL_CONVEYOR) != 0)
 	{
 		pev->velocity = pev->velocity + pev->basevelocity;
 	}
+
+	// Reset double jump flag since player is jumping from the ground
+	m_bDoubleJumpUsed = false;
 }
 
 
@@ -2134,9 +2156,30 @@ void CBasePlayer::PreThink()
 	{
 		// If on a ladder, jump off the ladder
 		// else Jump
+		// ALERT(at_console, "you jumped");
 		Jump();
 	}
 
+	if ((pev->button & IN_CLOAK) != 0)
+	{
+		// ALERT(at_console, "you cloaked");
+		Cloak();
+	}
+
+	// Tavi: If we're cloaked and attacking, uncloak
+	if (m_bIsCloaked && (pev->button & (IN_ATTACK)) != 0)
+	{
+		EMIT_SOUND(ENT(pev), CHAN_VOICE, "debris/beamstart1.wav", 0.6, ATTN_NORM);
+
+		pev->renderamt = m_iTargetRanderamt;
+		pev->rendermode = kRenderNormal;
+
+		pev->flags -= FL_NOTARGET;
+		// pev->flags -= FL_SPECTATOR;
+		m_bIsCloaked = false;
+
+		m_flFlashLightTime = FLASH_CHARGE_TIME + gpGlobals->time;
+	}
 
 	// If trying to duck, already ducked, or in the process of ducking
 	if ((pev->button & IN_DUCK) != 0 || FBitSet(pev->flags, FL_DUCKING) || (m_afPhysicsFlags & PFLAG_DUCKING) != 0)
@@ -3225,6 +3268,41 @@ void CBasePlayer::Spawn()
 	}
 }
 
+void CBasePlayer::Cloak()
+{ 
+	// If this isn't the first frame pressing the cloak button, break out.
+	if (!FBitSet(m_afButtonPressed, IN_CLOAK))
+		return;
+
+	if (!m_bIsCloaked)
+	{
+		EMIT_SOUND(ENT(pev), CHAN_VOICE, "debris/beamstart1.wav", 0.6, ATTN_NORM);
+
+		pev->renderamt = m_iTargetRanderamt - 200;
+		pev->rendermode = kRenderTransTexture;
+
+		pev->flags += FL_NOTARGET;
+		// pev->flags += FL_SPECTATOR;
+		m_bIsCloaked = true;
+
+		// Tavi: update flashlight battery hud item
+		m_flFlashLightTime = FLASH_DRAIN_TIME / 12 + gpGlobals->time;
+	}
+	else
+	{
+		EMIT_SOUND(ENT(pev), CHAN_VOICE, "debris/beamstart1.wav", 0.6, ATTN_NORM);
+
+		pev->renderamt = m_iTargetRanderamt;
+		pev->rendermode = kRenderNormal;
+
+		pev->flags -= FL_NOTARGET;
+		// pev->flags -= FL_SPECTATOR;
+		m_bIsCloaked = false;
+
+		// Tavi: update flashlight battery hud item
+		m_flFlashLightTime = FLASH_CHARGE_TIME + gpGlobals->time;
+	}
+}
 
 void CBasePlayer::Precache()
 {
@@ -3643,8 +3721,8 @@ void CBasePlayer::FlashlightTurnOn()
 		return;
 	}
 
-	if (HasSuit())
-	{
+	// if (HasSuit())
+	// {
 		EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, SOUND_FLASHLIGHT_ON, 1.0, ATTN_NORM, 0, PITCH_NORM);
 		SetBits(pev->effects, EF_BRIGHTLIGHT);
 		MESSAGE_BEGIN(MSG_ONE, gmsgFlashlight, NULL, pev);
@@ -3653,7 +3731,7 @@ void CBasePlayer::FlashlightTurnOn()
 		MESSAGE_END();
 
 		m_flFlashLightTime = FLASH_DRAIN_TIME + gpGlobals->time;
-	}
+	// }
 }
 
 
@@ -3824,11 +3902,25 @@ void CBasePlayer::CheatImpulseCommands(int iImpulse)
 		break;
 	}
 
+	case 77:
+	{
+		if (!giPrecacheFAssassin)
+		{
+			giPrecacheFAssassin = true;
+			ALERT(at_console, "You must now restart to use Friendly Assassin-o-matic.\n");
+		}
+		else
+		{
+			UTIL_MakeVectors(Vector(0.0f, pev->v_angle.y, 0.0f));
+			Create("monster_fassassin_ally", pev->origin + gpGlobals->v_forward * 128.0f, pev->angles);
+		}
+		break;
+	}
 
 	case 101:
 		gEvilImpulse101 = true;
-		GiveNamedItem("item_suit");
-		GiveNamedItem("item_battery");
+		// GiveNamedItem("item_suit");
+		// GiveNamedItem("item_battery");
 		GiveNamedItem("weapon_crowbar");
 		GiveNamedItem("weapon_9mmhandgun");
 		GiveNamedItem("ammo_9mmclip");
@@ -3861,8 +3953,16 @@ void CBasePlayer::CheatImpulseCommands(int iImpulse)
 		GiveNamedItem("weapon_grapple");
 		GiveNamedItem("weapon_sniperrifle");
 		GiveNamedItem("weapon_displacer");
-		//TODO: not given
-		//GiveNamedItem( "ammo_762" );
+
+		// GiveNamedItem("item_armor");
+		// GiveNamedItem("item_armor");
+		// GiveNamedItem("item_armor");
+		GiveNamedItem("weapon_m4");
+		GiveNamedItem("weapon_m4");
+		GiveNamedItem("weapon_m4");
+		GiveNamedItem("weapon_elite");
+
+		GiveNamedItem( "ammo_762" );
 
 		gEvilImpulse101 = false;
 		break;
@@ -4005,7 +4105,7 @@ bool CBasePlayer::AddPlayerItem(CBasePlayerItem* pItem)
 				pInsert->UpdateItemInfo();
 				if (m_pActiveItem)
 					m_pActiveItem->UpdateItemInfo();
-
+				
 				pItem->Kill();
 			}
 			else if (gEvilImpulse101)
@@ -4185,6 +4285,28 @@ void CBasePlayer::ItemPreFrame()
 
 	if (!m_pActiveItem)
 		return;
+
+	// Tavi
+	CBaseEntity* viewEntity = m_pActiveItem;
+
+	if (viewEntity)
+	{
+		// Tavi:
+		if (m_bIsCloaked)
+		{
+			ALERT(at_console, "PreThink:: you are cloacked!!!\n");
+			m_pActiveItem->pev->renderamt = m_iTargetRanderamt - 200;
+			m_pActiveItem->pev->rendermode = kRenderTransTexture;
+			m_pActiveItem->pev->renderfx = kRenderFxHologram;
+		}
+		else
+		{
+			ALERT(at_console, "PreThink:: you are NOT cloacked!!!\n");
+			m_pActiveItem->pev->renderamt = m_iTargetRanderamt;
+			m_pActiveItem->pev->rendermode = kRenderNormal;
+			m_pActiveItem->pev->renderfx = kRenderFxNone;
+		}
+	}
 
 	m_pActiveItem->ItemPreFrame();
 }
@@ -4479,26 +4601,46 @@ void CBasePlayer::UpdateClientData()
 	// Update Flashlight
 	if ((0 != m_flFlashLightTime) && (m_flFlashLightTime <= gpGlobals->time))
 	{
-		if (FlashlightIsOn())
+		if (FlashlightIsOn() || m_bIsCloaked)
 		{
 			if (0 != m_iFlashBattery)
 			{
-				m_flFlashLightTime = FLASH_DRAIN_TIME + gpGlobals->time;
+				if (m_bIsCloaked)
+					m_flFlashLightTime = FLASH_DRAIN_TIME / 12 + gpGlobals->time;
+				else
+					m_flFlashLightTime = FLASH_DRAIN_TIME + gpGlobals->time;
+
 				m_iFlashBattery--;
 
-				if (0 == m_iFlashBattery)
+				if (0 == m_iFlashBattery) {
+					// Tavi: Uncloak if we run out of flashlight power
+					if (m_bIsCloaked)
+					{
+						EMIT_SOUND(ENT(pev), CHAN_VOICE, "debris/beamstart1.wav", 0.6, ATTN_NORM);
+
+						pev->renderamt = m_iTargetRanderamt;
+						pev->rendermode = kRenderNormal;
+
+						pev->flags -= FL_NOTARGET;
+						// pev->flags -= FL_SPECTATOR;
+						m_bIsCloaked = false;
+					}
 					FlashlightTurnOff();
+				}
 			}
 		}
 		else
 		{
-			if (m_iFlashBattery < 100)
+			if (!m_bIsCloaked)
 			{
-				m_flFlashLightTime = FLASH_CHARGE_TIME + gpGlobals->time;
-				m_iFlashBattery++;
+				if (m_iFlashBattery < 100)
+				{
+					m_flFlashLightTime = FLASH_CHARGE_TIME + gpGlobals->time;
+					m_iFlashBattery++;
+				}
+				else
+					m_flFlashLightTime = 0;
 			}
-			else
-				m_flFlashLightTime = 0;
 		}
 
 		MESSAGE_BEGIN(MSG_ONE, gmsgFlashBattery, NULL, pev);

@@ -26,11 +26,13 @@
 #include "player.h"
 #include "monsters.h"
 #include "weapons.h"
+#include "weapons/CM4.h"
 #include "soundent.h"
 #include "decals.h"
 #include "gamerules.h"
 #include "game.h"
 #include "UserMessages.h"
+#include "r_efx.h"
 
 #define NOT_USED 255
 
@@ -192,8 +194,6 @@ void DecalGunshot(TraceResult* pTrace, int iBulletType)
 	}
 }
 
-
-
 //
 // EjectBrass - tosses a brass shell from passed origin at passed velocity
 //
@@ -335,6 +335,10 @@ void W_Precache()
 
 	// hand grenade
 	UTIL_PrecacheOtherWeapon("weapon_handgrenade");
+	UTIL_PrecacheOtherWeapon("weapon_handgrenade");
+	UTIL_PrecacheOtherWeapon("weapon_handgrenade");
+	UTIL_PrecacheOtherWeapon("weapon_handgrenade");
+	UTIL_PrecacheOtherWeapon("weapon_handgrenade");
 
 	// squeak grenade
 	UTIL_PrecacheOtherWeapon("weapon_snark");
@@ -364,6 +368,8 @@ void W_Precache()
 	UTIL_PrecacheOtherWeapon("weapon_knife");
 
 	UTIL_PrecacheOtherWeapon("weapon_penguin");
+	UTIL_PrecacheOtherWeapon("weapon_m4");
+	UTIL_PrecacheOtherWeapon("weapon_elite");
 
 	PRECACHE_SOUND("weapons/spore_hit1.wav");
 	PRECACHE_SOUND("weapons/spore_hit2.wav");
@@ -412,6 +418,7 @@ TYPEDESCRIPTION CBasePlayerItem::m_SaveData[] =
 		DEFINE_FIELD(CBasePlayerItem, m_pNext, FIELD_CLASSPTR),
 		//DEFINE_FIELD( CBasePlayerItem, m_fKnown, FIELD_INTEGER ),Reset to zero on load
 		DEFINE_FIELD(CBasePlayerItem, m_iId, FIELD_INTEGER),
+		DEFINE_FIELD(CBasePlayerItem, m_iszWorldModel, FIELD_STRING),
 		// DEFINE_FIELD( CBasePlayerItem, m_iIdPrimary, FIELD_INTEGER ),
 		// DEFINE_FIELD( CBasePlayerItem, m_iIdSecondary, FIELD_INTEGER ),
 };
@@ -585,7 +592,7 @@ void CBasePlayerItem::DefaultTouch(CBaseEntity* pOther)
 
 	CBasePlayer* pPlayer = (CBasePlayer*)pOther;
 
-	// can I have this?
+	// can I have this? (silently does nothing if the weapon's slot is already occupied by something else)
 	if (!g_pGameRules->CanHavePlayerItem(pPlayer, this))
 	{
 		if (gEvilImpulse101)
@@ -595,10 +602,13 @@ void CBasePlayerItem::DefaultTouch(CBaseEntity* pOther)
 		return;
 	}
 
+
+	
+
 	if (pOther->AddPlayerItem(this))
 	{
 		AttachToPlayer(pPlayer);
-		EMIT_SOUND(ENT(pPlayer->pev), CHAN_ITEM, "items/gunpickup2.wav", 1, ATTN_NORM);
+		PlayPickupSound(pPlayer);
 	}
 
 	SUB_UseTargets(pOther, USE_TOGGLE, 0); // UNDONE: when should this happen?
@@ -642,6 +652,8 @@ void CBasePlayerItem::Holster()
 
 void CBasePlayerItem::AttachToPlayer(CBasePlayer* pPlayer)
 {
+	m_iszWorldModel = pev->model; // remember the w_ model so we can restore it if this item is later ejected back to the world
+
 	pev->movetype = MOVETYPE_FOLLOW;
 	pev->solid = SOLID_NOT;
 	pev->aiment = pPlayer->edict();
@@ -652,6 +664,103 @@ void CBasePlayerItem::AttachToPlayer(CBasePlayer* pPlayer)
 	pev->nextthink = gpGlobals->time + .1;
 	SetTouch(NULL);
 	SetThink(NULL); // Clear FallThink function so it can't run while attached to player.
+}
+
+int CBasePlayerItem::ObjectCaps()
+{
+	// Only usable with the +use key while it's sitting in the world (not currently owned by a player, and not waiting to respawn).
+	if (m_pPlayer != nullptr || (pev->effects & EF_NODRAW) != 0)
+		return CBaseAnimating::ObjectCaps();
+
+	return CBaseAnimating::ObjectCaps() | FCAP_IMPULSE_USE;
+}
+
+void CBasePlayerItem::PlayPickupSound(CBasePlayer* pPlayer)
+{
+	switch (RANDOM_LONG(0, 3))
+	{
+	case 0:
+		EMIT_SOUND(ENT(pPlayer->pev), CHAN_ITEM, "items/gunpickup1.wav", 1, ATTN_NORM);
+		break;
+	case 1:
+		EMIT_SOUND(ENT(pPlayer->pev), CHAN_ITEM, "items/gunpickup2.wav", 1, ATTN_NORM);
+		break;
+	case 2:
+		EMIT_SOUND(ENT(pPlayer->pev), CHAN_ITEM, "items/gunpickup3.wav", 1, ATTN_NORM);
+		break;
+	case 3:
+		EMIT_SOUND(ENT(pPlayer->pev), CHAN_ITEM, "items/gunpickup4.wav", 1, ATTN_NORM);
+		break;
+	}
+}
+
+void CBasePlayerItem::EjectToWorld(const Vector& origin, const Vector& velocity)
+{
+	m_pPlayer = nullptr;
+	pev->owner = nullptr;
+	pev->aiment = nullptr;
+
+	pev->movetype = MOVETYPE_TOSS;
+	pev->solid = SOLID_TRIGGER;
+	pev->effects &= ~EF_NODRAW;
+
+	if (!FStringNull(m_iszWorldModel))
+		SET_MODEL(ENT(pev), STRING(m_iszWorldModel));
+
+	UTIL_SetOrigin(pev, origin);
+	pev->angles.x = 0;
+	pev->angles.z = 0;
+	pev->velocity = velocity;
+
+	SetTouch(&CBasePlayerItem::DefaultTouch);
+	SetThink(&CBasePlayerItem::FallThink);
+	pev->nextthink = gpGlobals->time + 0.1;
+}
+
+// Called when a player presses +use while aiming at a weapon lying in the world.
+// If the weapon's slot is free this just picks it up; if the slot is occupied by a different
+// weapon, that weapon is ejected back to the world (not destroyed) to make room, and the
+// player always switches to the weapon they just picked up.
+void CBasePlayerItem::Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
+{
+	if (!pActivator || !pActivator->IsPlayer())
+		return;
+
+	// Not a world pickup right now (already owned, or invisible while waiting to respawn).
+	if (m_pPlayer != nullptr || (pev->effects & EF_NODRAW) != 0)
+		return;
+
+	CBasePlayer* pPlayer = static_cast<CBasePlayer*>(pActivator);
+
+	if (!g_pGameRules->CanHavePlayerItem(pPlayer, this))
+	{
+		CBasePlayerItem* pOccupant = pPlayer->m_rgpPlayerItems[iItemSlot()];
+
+		// Nothing to swap out (e.g. can't carry more ammo for a weapon we already have), or the
+		// occupant can't be holstered right now (mid-reload RPG lock, primed grenade, etc).
+		if (!pOccupant || FClassnameIs(pOccupant->pev, STRING(pev->classname)) || !pOccupant->CanHolster())
+			return;
+
+		Vector ejectVelocity = pPlayer->pev->velocity;
+		UTIL_MakeVectors(pPlayer->pev->angles);
+		Vector ejectOrigin = pPlayer->pev->origin + pPlayer->pev->view_ofs + gpGlobals->v_forward * 24;
+
+		if (!pPlayer->RemovePlayerItem(pOccupant))
+			return;
+
+		pPlayer->ClearWeaponBit(pOccupant->m_iId);
+		pOccupant->EjectToWorld(ejectOrigin, ejectVelocity + gpGlobals->v_forward * 200);
+
+		if (!g_pGameRules->CanHavePlayerItem(pPlayer, this))
+			return; // shouldn't normally happen now that the slot is free
+	}
+
+	if (pPlayer->AddPlayerItem(this))
+	{
+		AttachToPlayer(pPlayer);
+		PlayPickupSound(pPlayer);
+		pPlayer->SwitchWeapon(this); // E-key swap always switches to the weapon just picked up
+	}
 }
 
 // CALLED THROUGH the newly-touched weapon's instance. The existing player weapon is pOriginal
@@ -1434,6 +1543,12 @@ void CBasePlayerWeapon::PrintState()
 
 	ALERT(at_console, "m_iclip:  %i\n", m_iClip);
 }
+
+TYPEDESCRIPTION CM4::m_SaveData[] =
+	{
+		DEFINE_FIELD(CM4, m_iBurstState, FIELD_INTEGER),
+};
+IMPLEMENT_SAVERESTORE(CM4, CBasePlayerWeapon);
 
 TYPEDESCRIPTION CRpg::m_SaveData[] =
 	{

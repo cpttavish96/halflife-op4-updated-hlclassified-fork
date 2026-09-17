@@ -50,6 +50,7 @@ void CEgon::Precache()
 {
 	PRECACHE_MODEL("models/w_egon.mdl");
 	PRECACHE_MODEL("models/v_egon.mdl");
+	PRECACHE_MODEL("models/v_egon_inv.mdl");
 	PRECACHE_MODEL("models/p_egon.mdl");
 
 	PRECACHE_MODEL("models/w_9mmclip.mdl");
@@ -73,7 +74,29 @@ bool CEgon::Deploy()
 {
 	m_deployed = false;
 	m_fireState = FIRE_OFF;
+	if (m_pPlayer->m_bIsCloaked)
+		return DefaultDeploy("models/v_egon_inv.mdl", "models/p_egon.mdl", EGON_DRAW, "egon");
 	return DefaultDeploy("models/v_egon.mdl", "models/p_egon.mdl", EGON_DRAW, "egon");
+}
+
+void CEgon::UpdateVModel()
+{
+	if (!m_pPlayer->m_bIsCloaked)
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_egon.mdl");
+#else
+		LoadVModel("models/v_egon.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_egon_inv.mdl");
+#else
+		LoadVModel("models/v_egon_inv.mdl", m_pPlayer);
+#endif
+	}
 }
 
 void CEgon::Holster()
@@ -216,6 +239,7 @@ void CEgon::Attack()
 void CEgon::PrimaryAttack()
 {
 	m_fireMode = FIRE_WIDE;
+	UpdateVModel();
 	Attack();
 }
 
@@ -471,6 +495,7 @@ void CEgon::WeaponIdle()
 	}
 
 	ResetEmptySound();
+	UpdateVModel();
 
 	if (m_flTimeWeaponIdle > UTIL_WeaponTimeBase())
 		return;

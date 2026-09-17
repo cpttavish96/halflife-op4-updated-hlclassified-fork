@@ -49,6 +49,7 @@ LINK_ENTITY_TO_CLASS(weapon_grapple, CGrapple);
 void CGrapple::Precache()
 {
 	PRECACHE_MODEL("models/v_bgrap.mdl");
+	PRECACHE_MODEL("models/v_bgrap_inv.mdl");
 	PRECACHE_MODEL("models/w_bgrap.mdl");
 	PRECACHE_MODEL("models/p_bgrap.mdl");
 
@@ -87,7 +88,29 @@ void CGrapple::Spawn()
 
 bool CGrapple::Deploy()
 {
+	if (m_pPlayer->m_bIsCloaked)
+		return DefaultDeploy("models/v_bgrap_inv.mdl", "models/p_bgrap.mdl", BGRAPPLE_UP, "gauss");
 	return DefaultDeploy("models/v_bgrap.mdl", "models/p_bgrap.mdl", BGRAPPLE_UP, "gauss");
+}
+
+void CGrapple::UpdateVModel()
+{
+	if (!m_pPlayer->m_bIsCloaked)
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_bgrap.mdl");
+#else
+		LoadVModel("models/v_bgrap.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_bgrap_inv.mdl");
+#else
+		LoadVModel("models/v_bgrap_inv.mdl", m_pPlayer);
+#endif
+	}
 }
 
 void CGrapple::Holster()
@@ -105,6 +128,7 @@ void CGrapple::Holster()
 void CGrapple::WeaponIdle()
 {
 	ResetEmptySound();
+	UpdateVModel();
 
 	if (m_flTimeWeaponIdle <= UTIL_WeaponTimeBase())
 	{
@@ -146,6 +170,7 @@ void CGrapple::PrimaryAttack()
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.1;
 		return;
 	}
+	UpdateVModel();
 
 	UTIL_MakeVectors(m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle);
 
@@ -552,7 +577,7 @@ void CGrapple::DestroyEffect()
 
 int CGrapple::iItemSlot()
 {
-	return 1;
+	return 6;
 }
 
 bool CGrapple::GetItemInfo(ItemInfo* p)
@@ -563,8 +588,8 @@ bool CGrapple::GetItemInfo(ItemInfo* p)
 	p->pszAmmo2 = nullptr;
 	p->iMaxAmmo2 = WEAPON_NOCLIP;
 	p->iMaxClip = WEAPON_NOCLIP;
-	p->iSlot = 0;
-	p->iPosition = 3;
+	p->iSlot = 5;
+	p->iPosition = 1;
 	p->iId = m_iId = WEAPON_GRAPPLE;
 	p->iFlags = 0;
 	p->iWeight = 21;

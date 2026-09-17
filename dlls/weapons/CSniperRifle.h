@@ -73,7 +73,12 @@ public:
 #endif
 	}
 
+	void UpdateVModel();
+
 	void ToggleZoom();
+	void UpdateSpot();
+	CLaserSpot* m_pSpot;
+	bool m_fSpotActive;
 
 private:
 	unsigned short m_usSniper;

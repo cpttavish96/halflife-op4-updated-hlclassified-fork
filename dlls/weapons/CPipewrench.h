@@ -84,6 +84,8 @@ public:
 #endif
 	}
 
+	void UpdateVModel();
+
 	float m_flBigSwingStart;
 	int m_iSwingMode;
 	int m_iSwing;
