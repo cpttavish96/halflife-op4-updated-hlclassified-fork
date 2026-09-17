@@ -84,5 +84,6 @@ private:
 	unsigned short m_usSniper;
 
 	bool m_bReloading;
+	bool m_bZoomed = false;
 	float m_flReloadStart;
 };

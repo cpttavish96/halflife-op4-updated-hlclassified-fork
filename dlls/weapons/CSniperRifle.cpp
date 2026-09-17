@@ -171,6 +171,10 @@ void CSniperRifle::PrimaryAttack()
 
 	--m_iClip;
 
+	if (m_bZoomed) {
+		SecondaryAttack();
+	}
+
 	m_pPlayer->SetAnimation(PLAYER_ATTACK1);
 
 	Vector vecAngles = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
@@ -272,6 +276,7 @@ void CSniperRifle::IncrementAmmo(CBasePlayer* pPlayer)
 void CSniperRifle::ToggleZoom()
 {
 	m_fSpotActive = !m_fSpotActive;
+	m_bZoomed = !m_bZoomed;
 
 #ifndef CLIENT_DLL
 	if (!m_fSpotActive && m_pSpot)
