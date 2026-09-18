@@ -3960,7 +3960,6 @@ void CBasePlayer::CheatImpulseCommands(int iImpulse)
 		GiveNamedItem("weapon_m4");
 		GiveNamedItem("weapon_m4");
 		GiveNamedItem("weapon_m4");
-		GiveNamedItem("weapon_elite");
 
 		GiveNamedItem( "ammo_762" );
 
@@ -4294,14 +4293,14 @@ void CBasePlayer::ItemPreFrame()
 		// Tavi:
 		if (m_bIsCloaked)
 		{
-			ALERT(at_console, "PreThink:: you are cloacked!!!\n");
+			// ALERT(at_console, "PreThink:: you are cloacked!!!\n");
 			m_pActiveItem->pev->renderamt = m_iTargetRanderamt - 200;
 			m_pActiveItem->pev->rendermode = kRenderTransTexture;
 			m_pActiveItem->pev->renderfx = kRenderFxHologram;
 		}
 		else
 		{
-			ALERT(at_console, "PreThink:: you are NOT cloacked!!!\n");
+			// ALERT(at_console, "PreThink:: you are NOT cloacked!!!\n");
 			m_pActiveItem->pev->renderamt = m_iTargetRanderamt;
 			m_pActiveItem->pev->rendermode = kRenderNormal;
 			m_pActiveItem->pev->renderfx = kRenderFxNone;

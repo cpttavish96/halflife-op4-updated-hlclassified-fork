@@ -381,9 +381,6 @@
     <ClCompile Include="..\..\cl_dll\particleman\CBaseParticle.cpp">
       <Filter>Source Files\cl_dll\particleman</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\dlls\weapons\CElite.cpp">
-      <Filter>Source Files\_hl\dlls\weapons</Filter>
-    </ClCompile>
     <ClCompile Include="hud_scope.cpp">
       <Filter>Source Files\cl_dll</Filter>
     </ClCompile>
@@ -700,9 +697,6 @@
     </ClInclude>
     <ClInclude Include="..\..\cl_dll\particleman\CBaseParticle.h">
       <Filter>Header Files\cl_dll\particleman</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dlls\weapons\CElite.h">
-      <Filter>Header Files\_hl\dlls\weapons</Filter>
     </ClInclude>
     <ClInclude Include="..\..\dlls\weapons\CMP5Dual.h">
       <Filter>Header Files</Filter>

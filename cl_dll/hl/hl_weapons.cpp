@@ -29,7 +29,6 @@
 #include "weapons/CKnife.h"
 #include "weapons/CPenguin.h"
 #include "weapons/CM4.h"
-#include "weapons/CElite.h"
 
 #include "usercmd.h"
 #include "entity_state.h"
@@ -91,7 +90,6 @@ CSniperRifle g_SniperRifle;
 CKnife g_Knife;
 CPenguin g_Penguin;
 CM4 g_M4;
-CElite g_Elite;
 
 
 /*
@@ -532,7 +530,6 @@ void HUD_InitClientWeapons()
 	HUD_PrepEntity(&g_Knife, &player);
 	HUD_PrepEntity(&g_Penguin, &player);
 	HUD_PrepEntity(&g_M4, &player);
-	HUD_PrepEntity(&g_Elite, &player);
 }
 
 /*
@@ -630,8 +627,6 @@ CBasePlayerWeapon* GetLocalWeapon(int id)
 		return &g_Penguin;
 	case WEAPON_M4:
 		return &g_M4;
-	case WEAPON_ELITE:
-		return &g_Elite;
 
 	default:
 		return nullptr;
