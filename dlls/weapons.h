@@ -567,6 +567,7 @@ public:
 	void PrimaryAttack() override;
 	void SecondaryAttack() override;
 	void GlockFire(float flSpread, float flCycleTime, bool fUseAutoAim);
+	void EliteFire(float flSpread, float flCycleTime, bool fUseAutoAim, bool isLeftHandGun);
 	bool Deploy() override;
 	void Holster() override;
 	void Reload() override;
@@ -585,9 +586,11 @@ public:
 
 private:
 	int m_iShell;
-	bool m_bIsSilenced = false;
+	bool m_bIsAkimbo = false;
 	bool m_bIsHolstered = false;
+	bool left = true;
 
+	int m_iClipLeft = 0;
 
 	unsigned short m_usFireGlock1;
 	unsigned short m_usFireGlock2;
