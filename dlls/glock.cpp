@@ -20,8 +20,6 @@
 #include "weapons.h"
 #include "player.h"
 
-#include "weapons/CElite.h"
-
 LINK_ENTITY_TO_CLASS(weapon_glock, CGlock);
 LINK_ENTITY_TO_CLASS(weapon_9mmhandgun, CGlock);
 

@@ -95,7 +95,6 @@ DLL_OBJS = \
 	$(WEAPONS_OBJ_DIR)/CDisplacer.o \
 	$(WEAPONS_OBJ_DIR)/CDisplacerBall.o \
 	$(WEAPONS_OBJ_DIR)/CEagle.o \
-	$(WEAPONS_OBJ_DIR)/CElite.o \
 	$(WEAPONS_OBJ_DIR)/CEagleLaser.o \
 	$(WEAPONS_OBJ_DIR)/CGrapple.o \
 	$(WEAPONS_OBJ_DIR)/CGrappleTip.o \

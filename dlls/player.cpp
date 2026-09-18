@@ -3960,7 +3960,6 @@ void CBasePlayer::CheatImpulseCommands(int iImpulse)
 		GiveNamedItem("weapon_m4");
 		GiveNamedItem("weapon_m4");
 		GiveNamedItem("weapon_m4");
-		GiveNamedItem("weapon_elite");
 
 		GiveNamedItem( "ammo_762" );
 
