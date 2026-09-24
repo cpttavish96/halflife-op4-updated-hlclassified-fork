@@ -22,9 +22,14 @@
 
 #pragma once
 
-#define RGB_YELLOWISH 0x00FFA000 //255,160,0
-#define RGB_REDISH 0x00FF1010	 //255,160,0
-#define RGB_GREENISH 0x0000A000	 //0,160,0
+// #define RGB_YELLOWISH 0x00FFA000 //255,160,0
+// #define RGB_REDISH 0x00FF1010	 //255,160,0
+// #define RGB_GREENISH 0x0000A000	 //0,160,0
+
+#define RGB_YELLOWISH 0x00FF1010
+#define RGB_REDISH 0x00FF1010
+#define RGB_GREENISH 0x00FF1010
+
 
 #include "common_types.h"
 #include "cl_dll.h"
@@ -612,6 +617,33 @@ public:
 	void GetAllPlayersInfo();
 };
 
+// Poke646 - crossbow scope
+//
+//-----------------------------------------------------
+//
+class CHudScope : public CHudBase
+{
+public:
+	bool Init(void) override;
+	bool VidInit(void) override;
+	bool Draw(float flTime) override;
+	void Reset(void);
+	int MsgFunc_Scope(const char* pszName, int iSize, void* pbuf);
+
+	int DrawScope(void);
+
+protected:
+	void DrawScopeBorder(int frame, int x, int y, int width, int height);
+
+private:
+	HSPRITE m_hSprite;
+};
+
+
+//
+//-----------------------------------------------------
+//
+
 class CHud
 {
 private:
@@ -658,7 +690,8 @@ public:
 
 	bool HasSuit() const
 	{
-		return HasWeapon(WEAPON_SUIT);
+		// return HasWeapon(WEAPON_SUIT);
+		return false;
 	}
 
 	bool HasAnyWeapons() const
@@ -705,6 +738,7 @@ public:
 	CHudAmmoSecondary m_AmmoSecondary;
 	CHudTextMessage m_TextMessage;
 	CHudStatusIcons m_StatusIcons;
+	CHudScope m_Scope; // Poke646 - crossbow scope
 
 	CHudFlagIcons m_FlagIcons;
 	CHudPlayerBrowse m_PlayerBrowse;
@@ -722,12 +756,14 @@ public:
 	bool MsgFunc_Damage(const char* pszName, int iSize, void* pbuf);
 	bool MsgFunc_GameMode(const char* pszName, int iSize, void* pbuf);
 	bool MsgFunc_Logo(const char* pszName, int iSize, void* pbuf);
+	int MsgFunc_Cloak(const char* pszName, int iSize, void* pbuf);
 	bool MsgFunc_ResetHUD(const char* pszName, int iSize, void* pbuf);
 	void MsgFunc_InitHUD(const char* pszName, int iSize, void* pbuf);
 	void MsgFunc_ViewMode(const char* pszName, int iSize, void* pbuf);
 	bool MsgFunc_SetFOV(const char* pszName, int iSize, void* pbuf);
 	bool MsgFunc_Concuss(const char* pszName, int iSize, void* pbuf);
 	bool MsgFunc_Weapons(const char* pszName, int iSize, void* pbuf);
+	bool MsgFunc_Startup(const char* pszName, int iSize, void* pbuf); // Poke646 - dynamic HUD alpha
 
 	// Screen information
 	SCREENINFO m_scrinfo;

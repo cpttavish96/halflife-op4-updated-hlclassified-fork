@@ -345,6 +345,7 @@ void CRpg::Precache()
 {
 	PRECACHE_MODEL("models/w_rpg.mdl");
 	PRECACHE_MODEL("models/v_rpg.mdl");
+	PRECACHE_MODEL("models/v_rpg_inv.mdl");
 	PRECACHE_MODEL("models/p_rpg.mdl");
 
 	PRECACHE_SOUND("items/9mmclip1.wav");
@@ -386,14 +387,31 @@ void CRpg::IncrementAmmo(CBasePlayer* pPlayer)
 
 bool CRpg::Deploy()
 {
-	if (m_iClip == 0)
-	{
-		return DefaultDeploy("models/v_rpg.mdl", "models/p_rpg.mdl", RPG_DRAW_UL, "rpg");
-	}
+	if (m_pPlayer->m_bIsCloaked)
+		return DefaultDeploy("models/v_rpg_inv.mdl", "models/p_rpg.mdl", RPG_DRAW_UL, "rpg");
 
 	return DefaultDeploy("models/v_rpg.mdl", "models/p_rpg.mdl", RPG_DRAW1, "rpg");
 }
 
+void CRpg::UpdateVModel()
+{
+	if (!m_pPlayer->m_bIsCloaked)
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_rpg.mdl");
+#else
+		LoadVModel("models/v_rpg.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_rpg_inv.mdl");
+#else
+		LoadVModel("models/v_rpg_inv.mdl", m_pPlayer);
+#endif
+	}
+}
 
 bool CRpg::CanHolster()
 {
@@ -431,6 +449,8 @@ void CRpg::PrimaryAttack()
 	{
 		m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
 		m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
+
+		UpdateVModel();
 
 #ifndef CLIENT_DLL
 		// player "shoot" animation
@@ -495,6 +515,7 @@ void CRpg::WeaponIdle()
 	}
 
 	UpdateSpot();
+	UpdateVModel();
 
 	if (m_flTimeWeaponIdle > UTIL_WeaponTimeBase())
 		return;
@@ -547,6 +568,7 @@ void CRpg::UpdateSpot()
 		if (!m_pSpot)
 		{
 			m_pSpot = CLaserSpot::CreateSpot();
+			m_pSpot->pev->scale = 0.25;
 		}
 
 		UTIL_MakeVectors(m_pPlayer->pev->v_angle);

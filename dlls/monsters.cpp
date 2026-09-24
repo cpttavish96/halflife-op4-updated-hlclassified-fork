@@ -325,30 +325,38 @@ void CBaseMonster::Look(int iDistance)
 			{
 				// the looker will want to consider this entity
 				// don't check anything else about an entity that can't be seen, or an entity that you don't care about.
-				if (IRelationship(pSightEnt) != R_NO && FInViewCone(pSightEnt) && !FBitSet(pSightEnt->pev->flags, FL_NOTARGET) && FVisible(pSightEnt))
+				if (IRelationship(pSightEnt) != R_NO && FInViewCone(pSightEnt) && FVisible(pSightEnt))
 				{
 					if (pSightEnt->IsPlayer())
 					{
-						if ((pev->spawnflags & SF_MONSTER_WAIT_TILL_SEEN) != 0)
+						if (!FBitSet(pSightEnt->pev->flags, FL_NOTARGET))
 						{
-							CBaseMonster* pClient;
+							if ((pev->spawnflags & SF_MONSTER_WAIT_TILL_SEEN) != 0)
+							{
+								CBaseMonster* pClient;
 
-							pClient = pSightEnt->MyMonsterPointer();
-							// don't link this client in the list if the monster is wait till seen and the player isn't facing the monster
-							if (pSightEnt && !pClient->FInViewCone(this))
-							{
-								// we're not in the player's view cone.
-								continue;
+								pClient = pSightEnt->MyMonsterPointer();
+								// don't link this client in the list if the monster is wait till seen and the player isn't facing the monster
+								if (pSightEnt && !pClient->FInViewCone(this))
+								{
+									// we're not in the player's view cone.
+									continue;
+								}
+								else
+								{
+									// player sees us, become normal now.
+									pev->spawnflags &= ~SF_MONSTER_WAIT_TILL_SEEN;
+								}
 							}
-							else
-							{
-								// player sees us, become normal now.
-								pev->spawnflags &= ~SF_MONSTER_WAIT_TILL_SEEN;
-							}
+
+							// if we see a client, remember that (mostly for scripted AI)
+							iSighted |= bits_COND_SEE_CLIENT;
 						}
-
-						// if we see a client, remember that (mostly for scripted AI)
-						iSighted |= bits_COND_SEE_CLIENT;
+						else {
+							// Tavi: player is cloaked
+							// if we see a client, remember that (mostly for scripted AI)
+							iSighted |= bits_COND_ENEMY_DEAD;
+						}
 					}
 
 					pSightEnt->m_pLink = m_pLink;
@@ -3299,7 +3307,7 @@ void CBaseMonster::MonsterInitDead()
 	pev->solid = SOLID_BBOX;
 	pev->movetype = MOVETYPE_TOSS; // so he'll fall to ground
 
-	pev->frame = 0;
+	pev->frame = 255;
 	ResetSequenceInfo();
 	pev->framerate = 0;
 

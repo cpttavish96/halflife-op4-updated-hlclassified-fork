@@ -417,11 +417,16 @@ void CSqueak::Spawn()
 	pev->framerate = 1.0;
 }
 
+// int CSqueak::iItemSlot()
+// {
+// 	return 5;
+// }
 
 void CSqueak::Precache()
 {
 	PRECACHE_MODEL("models/w_sqknest.mdl");
 	PRECACHE_MODEL("models/v_squeak.mdl");
+	PRECACHE_MODEL("models/v_squeak_inv.mdl");
 	PRECACHE_MODEL("models/p_squeak.mdl");
 	PRECACHE_SOUND("squeek/sqk_hunt2.wav");
 	PRECACHE_SOUND("squeek/sqk_hunt3.wav");
@@ -461,8 +466,11 @@ bool CSqueak::Deploy()
 		EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "squeek/sqk_hunt3.wav", 1, ATTN_NORM, 0, 100);
 
 	m_pPlayer->m_iWeaponVolume = QUIET_GUN_VOLUME;
-
-	const bool result = DefaultDeploy("models/v_squeak.mdl", "models/p_squeak.mdl", SQUEAK_UP, "squeak");
+	bool result;
+	if (m_pPlayer->m_bIsCloaked)
+		result = DefaultDeploy("models/v_squeak_inv.mdl", "models/p_squeak.mdl", SQUEAK_UP, "squeak");
+	else
+		result = DefaultDeploy("models/v_squeak.mdl", "models/p_squeak.mdl", SQUEAK_UP, "squeak");
 
 	if (result)
 	{
@@ -472,6 +480,25 @@ bool CSqueak::Deploy()
 	return result;
 }
 
+void CSqueak::UpdateVModel()
+{
+	if (!m_pPlayer->m_bIsCloaked)
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_squeak.mdl");
+#else
+		LoadVModel("models/v_squeak.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_squeak_inv.mdl");
+#else
+		LoadVModel("models/v_squeak_inv.mdl", m_pPlayer);
+#endif
+	}
+}
 
 void CSqueak::Holster()
 {
@@ -488,7 +515,6 @@ void CSqueak::Holster()
 	SendWeaponAnim(SQUEAK_DOWN);
 	EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "common/null.wav", 1.0, ATTN_NORM);
 }
-
 
 void CSqueak::PrimaryAttack()
 {
@@ -556,6 +582,7 @@ void CSqueak::SecondaryAttack()
 
 void CSqueak::WeaponIdle()
 {
+	UpdateVModel();
 	if (m_flTimeWeaponIdle > UTIL_WeaponTimeBase())
 		return;
 

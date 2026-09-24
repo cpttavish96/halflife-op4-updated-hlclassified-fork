@@ -817,8 +817,8 @@ void UTIL_HudMessage(CBaseEntity* pEntity, const hudtextparms_t& textparms, cons
 	WRITE_BYTE(TE_TEXTMESSAGE);
 	WRITE_BYTE(textparms.channel & 0xFF);
 
-	WRITE_SHORT(FixedSigned16(textparms.x, 1 << 13));
-	WRITE_SHORT(FixedSigned16(textparms.y, 1 << 13));
+	WRITE_SHORT(FixedSigned16(textparms.x, 1 << 13)); // WRITE_SHORT(FixedSigned16(textparams.x, 1 << 13));
+	WRITE_SHORT(FixedSigned16(textparms.y, 1 << 13)); // samee
 	WRITE_BYTE(textparms.effect);
 
 	WRITE_BYTE(textparms.r1);
@@ -831,12 +831,12 @@ void UTIL_HudMessage(CBaseEntity* pEntity, const hudtextparms_t& textparms, cons
 	WRITE_BYTE(textparms.b2);
 	WRITE_BYTE(textparms.a2);
 
-	WRITE_SHORT(FixedUnsigned16(textparms.fadeinTime, 1 << 8));
-	WRITE_SHORT(FixedUnsigned16(textparms.fadeoutTime, 1 << 8));
-	WRITE_SHORT(FixedUnsigned16(textparms.holdTime, 1 << 8));
+	WRITE_SHORT(FixedUnsigned16(textparms.fadeinTime, 1 << 8)); // WRITE_SHORT(FixedUnsigned16(textparms.fadeinTime, 1 << 8));
+	WRITE_SHORT(FixedUnsigned16(textparms.fadeoutTime, 1 << 8)); // samee
+	WRITE_SHORT(FixedUnsigned16(textparms.holdTime, 1 << 8)); // samee
 
 	if (textparms.effect == 2)
-		WRITE_SHORT(FixedUnsigned16(textparms.fxTime, 1 << 8));
+		WRITE_SHORT(FixedUnsigned16(textparms.fxTime, 1 << 8)); // samee
 
 	if (strlen(pMessage) < 512)
 	{

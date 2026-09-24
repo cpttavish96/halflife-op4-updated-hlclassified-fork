@@ -94,8 +94,8 @@ bool CHudBattery::Draw(float flTime)
 		b = giB;
 	}
 
-	if (!gHUD.HasSuit())
-		return true;
+	/*if (!gHUD.HasSuit())
+		return true;*/
 
 	// Has health changed? Flash the health #
 	if (0 != m_fFade)

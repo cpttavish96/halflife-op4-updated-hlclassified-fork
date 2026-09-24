@@ -99,10 +99,9 @@ public:
 #define SNIPERRIFLE_WEIGHT 10
 #define PENGUIN_WEIGHT 5
 
-
 // weapon clip/carry ammo capacities
 #define URANIUM_MAX_CARRY 100
-#define _9MM_MAX_CARRY 250
+#define _9MM_MAX_CARRY 150
 #define _357_MAX_CARRY 36
 #define BUCKSHOT_MAX_CARRY 125
 #define BOLT_MAX_CARRY 50
@@ -112,7 +111,7 @@ public:
 #define TRIPMINE_MAX_CARRY 5
 #define SNARK_MAX_CARRY 15
 #define HORNET_MAX_CARRY 8
-#define M203_GRENADE_MAX_CARRY 10
+#define M203_GRENADE_MAX_CARRY 5
 #define M249_MAX_CARRY 200
 #define SPORELAUNCHER_MAX_CARRY 20
 #define SNIPERRIFLE_MAX_CARRY 15
@@ -124,8 +123,8 @@ public:
 //#define CROWBAR_MAX_CLIP		WEAPON_NOCLIP
 #define GLOCK_MAX_CLIP 17
 #define PYTHON_MAX_CLIP 6
-#define MP5_MAX_CLIP 50
-#define MP5_DEFAULT_AMMO 25
+#define MP5_MAX_CLIP 30
+#define MP5_DEFAULT_AMMO 15
 #define SHOTGUN_MAX_CLIP 8
 #define CROSSBOW_MAX_CLIP 5
 #define RPG_MAX_CLIP 1
@@ -142,6 +141,7 @@ public:
 #define SHOCKRIFLE_MAX_CLIP 10
 #define SNIPERRIFLE_MAX_CLIP 5
 #define PENGUIN_MAX_CLIP 3
+#define ELITE_MAX_CLIP 34
 
 
 // the default amount of ammo that comes with each gun when it spawns
@@ -156,7 +156,7 @@ public:
 #define RPG_DEFAULT_GIVE 1
 #define GAUSS_DEFAULT_GIVE 20
 #define EGON_DEFAULT_GIVE 20
-#define HANDGRENADE_DEFAULT_GIVE 5
+#define HANDGRENADE_DEFAULT_GIVE 1
 #define SATCHEL_DEFAULT_GIVE 1
 #define TRIPMINE_DEFAULT_GIVE 1
 #define SNARK_DEFAULT_GIVE 5
@@ -263,6 +263,14 @@ public:
 	void EXPORT Materialize();					   // make a weapon visible and tangible
 	void EXPORT AttemptToMaterialize();			   // the weapon desires to become visible and tangible, if the game rules allow for it
 	CBaseEntity* Respawn() override;			   // copy a weapon
+
+	// Lets a player press +use on a world weapon to pick it up, ejecting whatever is already in that slot (if any) to make room.
+	int ObjectCaps() override;
+	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value) override;
+	void PlayPickupSound(CBasePlayer* pPlayer);
+	void EjectToWorld(const Vector& origin, const Vector& velocity); // put this item (already removed from its owner) back on the ground, keeping its current ammo state
+
+	string_t m_iszWorldModel = iStringNull; // cached w_ model, set in AttachToPlayer, used to restore the world model when ejected via EjectToWorld
 	void FallInit();
 	void CheckRespawn();
 	virtual bool GetItemInfo(ItemInfo* p) { return false; } // returns false if struct not filled out
@@ -396,6 +404,7 @@ public:
 	int m_iPrimaryAmmoType;		   // "primary" ammo index into players m_rgAmmo[]
 	int m_iSecondaryAmmoType;	   // "secondary" ammo index into players m_rgAmmo[]
 	int m_iClip;				   // number of shots left in the primary weapon clip, -1 it not used
+	int m_iClipMdl;				   // number of shots left in the primary weapon clip, -1 it not used
 	int m_iClientClip;			   // the last version of m_iClip sent to hud dll
 	int m_iClientWeaponState;	   // the last version of the weapon state sent to hud dll (is current weapon, is on target)
 	bool m_fInReload;			   // Are we in the middle of a reload;
@@ -516,6 +525,21 @@ bool bIsMultiplayer();
 void LoadVModel(const char* szViewModel, CBasePlayer* m_pPlayer);
 #endif
 
+
+class CLaserSpot : public CBaseEntity
+{
+public:
+	void Spawn() override;
+	void Precache() override;
+
+	int ObjectCaps() override { return FCAP_DONT_SAVE; }
+
+	void Suspend(float flSuspendTime);
+	void EXPORT Revive();
+
+	static CLaserSpot* CreateSpot();
+};
+
 enum glock_e
 {
 	GLOCK_IDLE1 = 0,
@@ -524,7 +548,7 @@ enum glock_e
 	GLOCK_SHOOT,
 	GLOCK_SHOOT_EMPTY,
 	GLOCK_RELOAD,
-	GLOCK_RELOAD_NOT_EMPTY,
+	GLOCK_RELOAD_TACTICAL,
 	GLOCK_DRAW,
 	GLOCK_HOLSTER,
 	GLOCK_ADD_SILENCER
@@ -544,8 +568,11 @@ public:
 	void SecondaryAttack() override;
 	void GlockFire(float flSpread, float flCycleTime, bool fUseAutoAim);
 	bool Deploy() override;
+	void Holster() override;
 	void Reload() override;
 	void WeaponIdle() override;
+	void UpdateVModel();
+	void DefaultTouch(CBaseEntity* pOther);
 
 	bool UseDecrement() override
 	{
@@ -558,6 +585,8 @@ public:
 
 private:
 	int m_iShell;
+	bool m_bIsSilenced = false;
+	bool m_bIsHolstered = false;
 
 
 	unsigned short m_usFireGlock1;
@@ -591,6 +620,8 @@ public:
 	bool Swing(bool fFirst);
 	bool Deploy() override;
 	void Holster() override;
+	void UpdateVModel();
+	void WeaponIdle() override;
 	int m_iSwing;
 	TraceResult m_trHit;
 
@@ -634,6 +665,7 @@ public:
 	void Holster() override;
 	void Reload() override;
 	void WeaponIdle() override;
+	void UpdateVModel();
 
 	bool UseDecrement() override
 	{
@@ -652,12 +684,12 @@ enum mp5_e
 {
 	MP5_LONGIDLE = 0,
 	MP5_IDLE1,
-	MP5_LAUNCH,
+	MP5_GRENADE,
 	MP5_RELOAD,
 	MP5_DEPLOY,
 	MP5_FIRE1,
 	MP5_FIRE2,
-	MP5_FIRE3,
+	MP5_FIRE3
 };
 
 class CMP5 : public CBasePlayerWeapon
@@ -670,10 +702,12 @@ public:
 	void IncrementAmmo(CBasePlayer* pPlayer) override;
 
 	void PrimaryAttack() override;
+	void Mp5Fire(float flSpread, float flCycleTime, bool fUseAutoAim);
 	void SecondaryAttack() override;
 	bool Deploy() override;
 	void Reload() override;
 	void WeaponIdle() override;
+	void UpdateVModel();
 	float m_flNextAnimTime;
 	int m_iShell;
 
@@ -725,7 +759,7 @@ public:
 	void Holster() override;
 	void Reload() override;
 	void WeaponIdle() override;
-
+	void UpdateVModel();
 	bool UseDecrement() override
 	{
 #if defined(CLIENT_WEAPONS)
@@ -738,6 +772,7 @@ public:
 private:
 	unsigned short m_usCrossbow;
 	unsigned short m_usCrossbow2;
+	bool m_bZoomed = false;
 };
 
 enum shotgun_e
@@ -775,6 +810,7 @@ public:
 	bool Deploy() override;
 	void Reload() override;
 	void WeaponIdle() override;
+	void UpdateVModel();
 	void ItemPostFrame() override;
 	int m_fInReload; //TODO: not used, remove
 	float m_flNextReload;
@@ -792,20 +828,6 @@ public:
 private:
 	unsigned short m_usDoubleFire;
 	unsigned short m_usSingleFire;
-};
-
-class CLaserSpot : public CBaseEntity
-{
-public:
-	void Spawn() override;
-	void Precache() override;
-
-	int ObjectCaps() override { return FCAP_DONT_SAVE; }
-
-	void Suspend(float flSuspendTime);
-	void EXPORT Revive();
-
-	static CLaserSpot* CreateSpot();
 };
 
 enum rpg_e
@@ -847,6 +869,7 @@ public:
 	void WeaponIdle() override;
 
 	void UpdateSpot();
+	void UpdateVModel();
 	bool ShouldWeaponIdle() override { return true; }
 
 	CLaserSpot* m_pSpot;
@@ -923,7 +946,7 @@ public:
 	void PrimaryAttack() override;
 	void SecondaryAttack() override;
 	void WeaponIdle() override;
-
+	void UpdateVModel();
 	void StartFire();
 	void Fire(Vector vecOrigSrc, Vector vecDirShooting, float flDamage);
 	float GetFullChargeTime();
@@ -1015,7 +1038,7 @@ public:
 	void PrimaryAttack() override;
 	bool ShouldWeaponIdle() override { return true; }
 	void WeaponIdle() override;
-
+	void UpdateVModel();
 	float m_flAmmoUseTime; // since we use < 1 point of ammo per update, we subtract ammo on a timer.
 
 	float GetPulseInterval();
@@ -1083,6 +1106,7 @@ public:
 	void Holster() override;
 	void Reload() override;
 	void WeaponIdle() override;
+	void UpdateVModel();
 	float m_flNextAnimTime;
 
 	float m_flRechargeTime;
@@ -1128,6 +1152,7 @@ public:
 	bool CanHolster() override;
 	void Holster() override;
 	void WeaponIdle() override;
+	void UpdateVModel();
 
 	bool UseDecrement() override
 	{
@@ -1179,6 +1204,7 @@ public:
 
 	void Holster() override;
 	void WeaponIdle() override;
+	void UpdateVModel();
 	void Throw();
 
 	bool UseDecrement() override
@@ -1222,6 +1248,7 @@ public:
 	bool Deploy() override;
 	void Holster() override;
 	void WeaponIdle() override;
+	void UpdateVModel();
 
 	bool UseDecrement() override
 	{
@@ -1259,6 +1286,7 @@ public:
 	bool Deploy() override;
 	void Holster() override;
 	void WeaponIdle() override;
+	void UpdateVModel();
 	bool m_fJustThrown;
 
 	bool UseDecrement() override

@@ -132,6 +132,7 @@ void CTripmineGrenade::Spawn()
 void CTripmineGrenade::Precache()
 {
 	PRECACHE_MODEL("models/v_tripmine.mdl");
+	PRECACHE_MODEL("models/v_tripmine_inv.mdl");
 	PRECACHE_SOUND("weapons/mine_deploy.wav");
 	PRECACHE_SOUND("weapons/mine_activate.wav");
 	PRECACHE_SOUND("weapons/mine_charge.wav");
@@ -412,7 +413,29 @@ bool CTripmine::GetItemInfo(ItemInfo* p)
 bool CTripmine::Deploy()
 {
 	pev->body = 0;
+	if (m_pPlayer->m_bIsCloaked)
+		return DefaultDeploy("models/v_tripmine_inv.mdl", "models/p_tripmine.mdl", TRIPMINE_DRAW, "trip");
 	return DefaultDeploy("models/v_tripmine.mdl", "models/p_tripmine.mdl", TRIPMINE_DRAW, "trip");
+}
+
+void CTripmine::UpdateVModel()
+{
+	if (!m_pPlayer->m_bIsCloaked)
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_tripmine.mdl");
+#else
+		LoadVModel("models/v_tripmine.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_tripmine_inv.mdl");
+#else
+		LoadVModel("models/v_tripmine_inv.mdl", m_pPlayer);
+#endif
+	}
 }
 
 
@@ -492,6 +515,8 @@ void CTripmine::WeaponIdle()
 {
 	//If we're here then we're in a player's inventory, and need to use this body
 	pev->body = 0;
+	
+	UpdateVModel();
 
 	if (m_flTimeWeaponIdle > UTIL_WeaponTimeBase())
 		return;

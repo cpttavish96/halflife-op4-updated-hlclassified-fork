@@ -68,6 +68,8 @@ enum WeaponId
 	WEAPON_SNIPERRIFLE,
 	WEAPON_KNIFE,
 	WEAPON_PENGUIN,
+	WEAPON_M4,
+	WEAPON_ELITE,
 
 	WEAPON_SUIT = 31
 };
@@ -197,15 +199,15 @@ constexpr Vector VEC_DEAD_VIEW(0, 0, -8);
 #define MENU_STATSMENU 9
 #define MENU_SCOREBOARD 10
 
-#define RGB_YELLOWISH 0x00FFA000 //255,160,0
-#define RGB_REDISH 0x00FF1010	 //255,160,0
-#define RGB_GREENISH 0x0000A000	 //0,160,0
+#define RGB_YELLOWISH 0x00FF1010
+#define RGB_REDISH 0x00FF1010
+#define RGB_GREENISH 0x00FF1010
 
 #define RGB_HUD_COLOR RGB_GREENISH
 
 inline void UnpackRGB(int& r, int& g, int& b, unsigned long ulRGB)
 {
-	r = (ulRGB & 0xFF0000) >> 16;
-	g = (ulRGB & 0xFF00) >> 8;
-	b = ulRGB & 0xFF;
-}
+		r = (ulRGB & 0xFF0000) >> 16;
+		g = (ulRGB & 0xFF00) >> 8;
+		b = ulRGB & 0xFF;
+	}

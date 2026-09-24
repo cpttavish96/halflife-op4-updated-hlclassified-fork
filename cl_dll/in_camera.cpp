@@ -27,7 +27,8 @@ extern cl_enginefunc_t gEngfuncs;
 #define CAM_DIST_DELTA 1.0
 #define CAM_ANGLE_DELTA 2.5
 #define CAM_ANGLE_SPEED 2.5
-#define CAM_MIN_DIST 30.0
+#define CAM_MIN_DIST 16.0	  // Don't let the camera get any closer than ...
+#define CAM_MAX_DIST 96.0
 #define CAM_ANGLE_MOVE .5
 #define MAX_ANGLE_DIFF 10.0
 #define PITCH_MAX 90.0
@@ -75,6 +76,7 @@ Point cam_mouse;
 static kbutton_t cam_pitchup, cam_pitchdown, cam_yawleft, cam_yawright;
 static kbutton_t cam_in, cam_out, cam_move;
 
+float mf_NextSwitch;
 //-------------------------------------------------- Prototypes
 
 void CAM_ToThirdPerson();
@@ -300,6 +302,11 @@ void DLLEXPORT CAM_Think()
 	}
 	else if (0 != CL_KeyState(&cam_out))
 		dist += CAM_DIST_DELTA;
+	// Prevent the cam_out from going any further
+	// NOTE: Without this, it _appears_ it's not moving, but
+	// the transparency changes so it is... this fixes it.
+	if (dist > CAM_MAX_DIST)
+		dist = CAM_MAX_DIST;
 
 	if (cam_distancemove)
 	{
@@ -487,10 +494,10 @@ void CAM_Init()
 
 	cam_command = gEngfuncs.pfnRegisterVariable("cam_command", "0", 0);		  // tells camera to go to thirdperson
 	cam_snapto = gEngfuncs.pfnRegisterVariable("cam_snapto", "0", 0);		  // snap to thirdperson view
-	cam_idealyaw = gEngfuncs.pfnRegisterVariable("cam_idealyaw", "90", 0);	  // thirdperson yaw
+	cam_idealyaw = gEngfuncs.pfnRegisterVariable("cam_idealyaw", "0", 0);	  // thirdperson yaw
 	cam_idealpitch = gEngfuncs.pfnRegisterVariable("cam_idealpitch", "0", 0); // thirperson pitch
 	cam_idealdist = gEngfuncs.pfnRegisterVariable("cam_idealdist", "64", 0);  // thirdperson distance
-	cam_contain = gEngfuncs.pfnRegisterVariable("cam_contain", "0", 0);		  // contain camera to world
+	cam_contain = gEngfuncs.pfnRegisterVariable("cam_contain", "10", 0);		  // contain camera to world
 
 	c_maxpitch = gEngfuncs.pfnRegisterVariable("c_maxpitch", "90.0", 0);
 	c_minpitch = gEngfuncs.pfnRegisterVariable("c_minpitch", "0.0", 0);

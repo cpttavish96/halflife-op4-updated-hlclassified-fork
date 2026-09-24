@@ -123,6 +123,9 @@ public:
 	int m_afButtonPressed;
 	int m_afButtonReleased;
 
+	int viewmodelref = 0;
+	int weaponmodelref = 0;
+
 	EHANDLE m_SndLast;	   // last sound entity to modify player room type
 	int m_SndRoomtype = 0; // last roomtype set by sound entity. Defaults to 0 on new maps to disable it by default.
 	int m_ClientSndRoomtype;
@@ -258,6 +261,7 @@ public:
 	virtual void Duck();
 	virtual void PreThink();
 	virtual void PostThink();
+	void Cloak();
 	Vector GetGunPosition() override;
 	bool TakeHealth(float flHealth, int bitsDamageType) override;
 	void TraceAttack(entvars_t* pevAttacker, float flDamage, Vector vecDir, TraceResult* ptr, int bitsDamageType) override;
@@ -379,6 +383,9 @@ public:
 
 	void TabulateAmmo();
 
+	bool m_bDoubleJumpUsed = false;
+	bool m_bWasOnGround = false;
+
 	float m_flStartCharge;
 	float m_flAmmoStartCharge;
 	float m_flPlayAftershock;
@@ -436,6 +443,8 @@ private:
 public:
 	//True if the player is currently spawning.
 	bool m_bIsSpawning = false;
+	int m_iTargetRanderamt = 255;
+	bool m_bIsCloaked = false;
 };
 
 inline void CBasePlayer::SetWeaponBit(int id)
@@ -605,6 +614,7 @@ inline CPlayerEnumeratorWithStart UTIL_FindPlayers(CBasePlayer* pStartEntity)
 inline bool gInitHUD = true;
 inline bool gEvilImpulse101 = false;
 inline bool giPrecacheGrunt = false;
+inline bool giPrecacheFAssassin = false;
 
 /**
 *	@brief Display the game title if this key is set

@@ -80,6 +80,8 @@ public:
 #endif
 	}
 
+	void UpdateVModel();
+
 private:
 	int m_iSpriteTexture;
 

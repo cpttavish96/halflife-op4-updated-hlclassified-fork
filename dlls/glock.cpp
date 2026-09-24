@@ -28,7 +28,10 @@ void CGlock::Spawn()
 	pev->classname = MAKE_STRING("weapon_9mmhandgun"); // hack to allow for old names
 	Precache();
 	m_iId = WEAPON_GLOCK;
-	SET_MODEL(ENT(pev), "models/w_9mmhandgun.mdl");
+	if (m_bIsSilenced)
+		SET_MODEL(ENT(pev), "models/w_9mmhandgun_silenced.mdl");
+	else
+		SET_MODEL(ENT(pev), "models/w_9mmhandgun.mdl");
 
 	m_iDefaultAmmo = GLOCK_DEFAULT_GIVE;
 
@@ -39,10 +42,17 @@ void CGlock::Spawn()
 void CGlock::Precache()
 {
 	PRECACHE_MODEL("models/v_9mmhandgun.mdl");
+	PRECACHE_MODEL("models/v_9mmhandgun_silenced.mdl");
+	PRECACHE_MODEL("models/v_9mmhandgun_inv.mdl");
+	PRECACHE_MODEL("models/v_9mmhandgun_silenced_inv.mdl");
 	PRECACHE_MODEL("models/w_9mmhandgun.mdl");
+	PRECACHE_MODEL("models/w_9mmhandgun_silenced.mdl");
 	PRECACHE_MODEL("models/p_9mmhandgun.mdl");
+	PRECACHE_MODEL("models/p_9mmhandgun_silenced.mdl");
 
 	m_iShell = PRECACHE_MODEL("models/shell.mdl"); // brass shell
+	m_iClipMdl = PRECACHE_MODEL("models/w_9mmclip.mdl"); // empty clip
+	m_bIsSilenced = true;
 
 	PRECACHE_SOUND("items/9mmclip1.wav");
 	PRECACHE_SOUND("items/9mmclip2.wav");
@@ -50,6 +60,16 @@ void CGlock::Precache()
 	PRECACHE_SOUND("weapons/pl_gun1.wav"); //silenced handgun
 	PRECACHE_SOUND("weapons/pl_gun2.wav"); //silenced handgun
 	PRECACHE_SOUND("weapons/pl_gun3.wav"); //handgun
+
+	PRECACHE_SOUND("weapons/usp_silencer_on.wav");
+	PRECACHE_SOUND("weapons/usp_silencer_off.wav");
+
+	PRECACHE_SOUND("weapons/9mm_clipout.wav");
+	PRECACHE_SOUND("weapons/9mm_draw.wav");
+	PRECACHE_SOUND("weapons/9mm_clip.wav");
+	PRECACHE_SOUND("weapons/9mm_in.wav");
+	PRECACHE_SOUND("weapons/9mm_cock1.wav");
+	PRECACHE_SOUND("weapons/9mm_cock2.wav");	
 
 	m_usFireGlock1 = PRECACHE_EVENT(1, "events/glock1.sc");
 	m_usFireGlock2 = PRECACHE_EVENT(1, "events/glock2.sc");
@@ -64,7 +84,7 @@ bool CGlock::GetItemInfo(ItemInfo* p)
 	p->iMaxAmmo2 = -1;
 	p->iMaxClip = GLOCK_MAX_CLIP;
 	p->iSlot = 1;
-	p->iPosition = 0;
+	p->iPosition = 1;
 	p->iFlags = 0;
 	p->iId = m_iId = WEAPON_GLOCK;
 	p->iWeight = GLOCK_WEIGHT;
@@ -82,25 +102,145 @@ void CGlock::IncrementAmmo(CBasePlayer* pPlayer)
 
 bool CGlock::Deploy()
 {
-	// pev->body = 1;
+	m_bIsHolstered = false;
+
+	if (m_bIsSilenced) {
+		if (m_pPlayer->m_bIsCloaked)
+			return DefaultDeploy("models/v_9mmhandgun_silenced_inv.mdl", "models/p_9mmhandgun_silenced.mdl", GLOCK_DRAW, "onehanded");
+		return DefaultDeploy("models/v_9mmhandgun_silenced.mdl", "models/p_9mmhandgun_silenced.mdl", GLOCK_DRAW, "onehanded");
+	}
+
+	if (m_pPlayer->m_bIsCloaked)
+		return DefaultDeploy("models/v_9mmhandgun_inv.mdl", "models/p_9mmhandgun.mdl", GLOCK_DRAW, "onehanded");
 	return DefaultDeploy("models/v_9mmhandgun.mdl", "models/p_9mmhandgun.mdl", GLOCK_DRAW, "onehanded");
+}
+
+void CGlock::UpdateVModel()
+{
+	if (!m_pPlayer->m_bIsCloaked)
+	{
+		if (m_bIsSilenced)
+		{
+#ifndef CLIENT_DLL
+			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_9mmhandgun_silenced.mdl");
+#else
+			LoadVModel("models/v_9mmhandgun_silenced.mdl", m_pPlayer);
+#endif
+		}
+		else 
+		{
+#ifndef CLIENT_DLL
+			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_9mmhandgun.mdl");
+#else
+			LoadVModel("models/v_9mmhandgun.mdl", m_pPlayer);
+#endif
+		}
+	}
+	else
+	{
+		if (m_bIsSilenced)
+		{
+#ifndef CLIENT_DLL
+			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_9mmhandgun_silenced_inv.mdl");
+#else
+			LoadVModel("models/v_9mmhandgun_silenced_inv.mdl", m_pPlayer);
+#endif
+		}
+		else
+		{
+#ifndef CLIENT_DLL
+			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_9mmhandgun_inv.mdl");
+#else
+			LoadVModel("models/v_9mmhandgun_inv.mdl", m_pPlayer);
+#endif
+		}
+	}
+}
+
+void CGlock::Holster()
+{
+	m_fInReload = false; // cancel any reload in progress.
+
+	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 0.5;
+
+	SendWeaponAnim(GLOCK_HOLSTER);
+	m_bIsHolstered = true;
 }
 
 void CGlock::SecondaryAttack()
 {
-	GlockFire(0.1, 0.2, false);
+	if (m_pPlayer->m_afButtonLast & IN_ATTACK2 || m_bIsHolstered)
+		return;
+
+	Holster();
+	UpdateVModel();
+
+	if (m_bIsSilenced)
+	{
+		if (!m_pPlayer->m_bIsCloaked)
+		{
+#ifndef CLIENT_DLL
+			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_9mmhandgun.mdl");
+#else
+			LoadVModel("models/v_9mmhandgun.mdl", m_pPlayer);
+#endif
+		}
+		else
+		{
+#ifndef CLIENT_DLL
+			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_9mmhandgun_inv.mdl");
+#else
+			LoadVModel("models/v_9mmhandgun_inv.mdl", m_pPlayer);
+#endif
+		}
+		m_pPlayer->pev->weaponmodel = MAKE_STRING("models/p_9mmhandgun.mdl");
+		EMIT_SOUND(m_pPlayer->edict(), CHAN_WEAPON, "weapons/usp_silencer_off.wav", 1, ATTN_NORM);
+		m_bIsSilenced = false;
+	}
+	else
+	{
+		if (!m_pPlayer->m_bIsCloaked)
+		{
+#ifndef CLIENT_DLL
+			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_9mmhandgun_silenced.mdl");
+#else
+			LoadVModel("models/v_9mmhandgun_silenced.mdl", m_pPlayer);
+#endif
+		}
+		else
+		{
+#ifndef CLIENT_DLL
+			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_9mmhandgun_silenced_inv.mdl");
+#else
+			LoadVModel("models/v_9mmhandgun_silenced_inv.mdl", m_pPlayer);
+#endif
+		}
+		m_pPlayer->pev->weaponmodel = MAKE_STRING("models/p_9mmhandgun_silenced.mdl");
+		EMIT_SOUND(m_pPlayer->edict(), CHAN_WEAPON, "weapons/usp_silencer_on.wav", 1, ATTN_NORM);
+		m_bIsSilenced = true;
+	}
+	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 2.0;
+	m_flNextPrimaryAttack = m_flNextSecondaryAttack = GetNextAttackDelay(2.0);
 }
 
 void CGlock::PrimaryAttack()
 {
-	GlockFire(0.01, 0.3, true);
+	if (m_bIsSilenced) {
+		GlockFire(0.015, 0.1, true);
+	}
+	else {
+		GlockFire(0.020, 0.32, false);
+	}
 }
 
 void CGlock::GlockFire(float flSpread, float flCycleTime, bool fUseAutoAim)
 {
+	if (m_pPlayer->m_afButtonLast & IN_ATTACK && fUseAutoAim)
+		return;
+
 	if (m_iClip <= 0)
 	{
-		//if (m_fFireOnEmpty)
+		if (m_fFireOnEmpty)
 		{
 			PlayEmptySound();
 			m_flNextPrimaryAttack = m_flNextSecondaryAttack = GetNextAttackDelay(0.2);
@@ -108,6 +248,7 @@ void CGlock::GlockFire(float flSpread, float flCycleTime, bool fUseAutoAim)
 
 		return;
 	}
+	UpdateVModel();
 
 	m_iClip--;
 
@@ -125,17 +266,34 @@ void CGlock::GlockFire(float flSpread, float flCycleTime, bool fUseAutoAim)
 	m_pPlayer->SetAnimation(PLAYER_ATTACK1);
 
 	// silenced
-	if (pev->body == 1)
+	if (m_bIsSilenced)
 	{
 		m_pPlayer->m_iWeaponVolume = QUIET_GUN_VOLUME;
 		m_pPlayer->m_iWeaponFlash = DIM_GUN_FLASH;
+		switch (RANDOM_LONG(0, 1))
+		{
+		case 0:
+			EMIT_SOUND(m_pPlayer->edict(), CHAN_WEAPON, "weapons/pl_gun1.wav", 1, ATTN_NORM);
+			break;
+		case 1:
+			EMIT_SOUND(m_pPlayer->edict(), CHAN_WEAPON, "weapons/pl_gun2.wav", 1, ATTN_NORM);
+			break;
+		}
 	}
 	else
 	{
 		// non-silenced
 		m_pPlayer->m_iWeaponVolume = NORMAL_GUN_VOLUME;
 		m_pPlayer->m_iWeaponFlash = NORMAL_GUN_FLASH;
+		EMIT_SOUND(m_pPlayer->edict(), CHAN_WEAPON, "weapons/pl_gun3.wav", 1, ATTN_NORM);
 	}
+
+	// Eject the brass
+	Vector vecShellVelocity = m_pPlayer->pev->velocity + gpGlobals->v_right * RANDOM_FLOAT(100, 200) +
+					   gpGlobals->v_up * RANDOM_FLOAT(100, 150) + gpGlobals->v_forward * 25;
+	EjectBrass(pev->origin + m_pPlayer->pev->view_ofs + gpGlobals->v_up * -12 + gpGlobals->v_forward * 20 +
+				   gpGlobals->v_right * 8,
+		vecShellVelocity, pev->angles.y, m_iShell, TE_BOUNCE_SHELL);
 
 	Vector vecSrc = m_pPlayer->GetGunPosition();
 	Vector vecAiming;
@@ -150,9 +308,7 @@ void CGlock::GlockFire(float flSpread, float flCycleTime, bool fUseAutoAim)
 	}
 
 	Vector vecDir;
-	vecDir = m_pPlayer->FireBulletsPlayer(1, vecSrc, vecAiming, Vector(flSpread, flSpread, flSpread), 8192, BULLET_PLAYER_9MM, 0, 0, m_pPlayer->pev, m_pPlayer->random_seed);
-
-	PLAYBACK_EVENT_FULL(flags, m_pPlayer->edict(), fUseAutoAim ? m_usFireGlock1 : m_usFireGlock2, 0.0, g_vecZero, g_vecZero, vecDir.x, vecDir.y, 0, 0, (m_iClip == 0) ? 1 : 0, 0);
+	vecDir = m_pPlayer->FireBulletsPlayer(1, vecSrc, vecAiming, Vector(flSpread, flSpread, flSpread), 8192, BULLET_PLAYER_9MM, 1, 10, m_pPlayer->pev, m_pPlayer->random_seed);
 
 	m_flNextPrimaryAttack = m_flNextSecondaryAttack = GetNextAttackDelay(flCycleTime);
 
@@ -161,6 +317,12 @@ void CGlock::GlockFire(float flSpread, float flCycleTime, bool fUseAutoAim)
 		m_pPlayer->SetSuitUpdate("!HEV_AMO0", false, 0);
 
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat(m_pPlayer->random_seed, 10, 15);
+
+    // Play view model animation and firing sound
+	SendWeaponAnim(GLOCK_SHOOT);
+
+    // Punch the camera to simulate recoil
+    m_pPlayer->pev->punchangle.x -= 2;
 }
 
 
@@ -170,16 +332,21 @@ void CGlock::Reload()
 		return;
 
 	bool iResult;
+	Vector vecShellVelocity = m_pPlayer->pev->velocity + gpGlobals->v_right * RANDOM_FLOAT(50, 100) +
+							  gpGlobals->v_up * RANDOM_FLOAT(100, 150) + gpGlobals->v_forward * 25;
 
-	if (m_iClip == 0)
-		iResult = DefaultReload(17, GLOCK_RELOAD, 1.5);
-	else
-		iResult = DefaultReload(17, GLOCK_RELOAD_NOT_EMPTY, 1.5);
-
-	if (iResult)
-	{
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat(m_pPlayer->random_seed, 10, 15);
+	if (m_iClip == 0) {
+		iResult = DefaultReload(17, GLOCK_RELOAD, 2.7);
+		if (iResult)
+		{
+			EjectBrass(pev->origin + m_pPlayer->pev->view_ofs + gpGlobals->v_up * -12 + gpGlobals->v_forward * 20 +
+						   gpGlobals->v_right * 8,
+				vecShellVelocity, pev->angles.y, m_iClipMdl, BOUNCE_METAL);
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat(m_pPlayer->random_seed, 10, 15);
+		}
 	}
+	else
+		iResult = DefaultReload(17, GLOCK_RELOAD_TACTICAL, 2.2);
 }
 
 
@@ -187,11 +354,15 @@ void CGlock::Reload()
 void CGlock::WeaponIdle()
 {
 	ResetEmptySound();
+	UpdateVModel();
 
 	m_pPlayer->GetAutoaimVector(AUTOAIM_10DEGREES);
 
 	if (m_flTimeWeaponIdle > UTIL_WeaponTimeBase())
 		return;
+
+	if (m_bIsHolstered)
+		Deploy();
 
 	// only idle if the slid isn't back
 	if (m_iClip != 0)
@@ -217,12 +388,6 @@ void CGlock::WeaponIdle()
 		SendWeaponAnim(iAnim);
 	}
 }
-
-
-
-
-
-
 
 
 class CGlockAmmo : public CBasePlayerAmmo

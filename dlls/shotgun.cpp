@@ -43,6 +43,7 @@ void CShotgun::Spawn()
 void CShotgun::Precache()
 {
 	PRECACHE_MODEL("models/v_shotgun.mdl");
+	PRECACHE_MODEL("models/v_shotgun_inv.mdl");
 	PRECACHE_MODEL("models/w_shotgun.mdl");
 	PRECACHE_MODEL("models/p_shotgun.mdl");
 
@@ -93,7 +94,29 @@ void CShotgun::IncrementAmmo(CBasePlayer* pPlayer)
 
 bool CShotgun::Deploy()
 {
+	if (m_pPlayer->m_bIsCloaked)
+		return DefaultDeploy("models/v_shotgun_inv.mdl", "models/p_shotgun.mdl", SHOTGUN_DRAW, "shotgun");
 	return DefaultDeploy("models/v_shotgun.mdl", "models/p_shotgun.mdl", SHOTGUN_DRAW, "shotgun");
+}
+
+void CShotgun::UpdateVModel()
+{
+	if (!m_pPlayer->m_bIsCloaked)
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_shotgun.mdl");
+#else
+		LoadVModel("models/v_shotgun.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_shotgun_inv.mdl");
+#else
+		LoadVModel("models/v_shotgun_inv.mdl", m_pPlayer);
+#endif
+	}
 }
 
 void CShotgun::PrimaryAttack()
@@ -113,6 +136,8 @@ void CShotgun::PrimaryAttack()
 			PlayEmptySound();
 		return;
 	}
+
+	UpdateVModel();
 
 	m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
 	m_pPlayer->m_iWeaponFlash = NORMAL_GUN_FLASH;
@@ -184,6 +209,7 @@ void CShotgun::SecondaryAttack()
 		PlayEmptySound();
 		return;
 	}
+	UpdateVModel();
 
 	m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
 	m_pPlayer->m_iWeaponFlash = NORMAL_GUN_FLASH;
@@ -300,6 +326,7 @@ void CShotgun::Reload()
 void CShotgun::WeaponIdle()
 {
 	ResetEmptySound();
+	UpdateVModel();
 
 	m_pPlayer->GetAutoaimVector(AUTOAIM_5DEGREES);
 

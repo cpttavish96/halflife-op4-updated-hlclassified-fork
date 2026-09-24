@@ -28,6 +28,7 @@
 #include "weapons/CSniperRifle.h"
 #include "weapons/CKnife.h"
 #include "weapons/CPenguin.h"
+#include "weapons/CM4.h"
 
 #include "com_weapons.h"
 #include "const.h"
@@ -734,7 +735,7 @@ void EV_FireMP52(event_args_t* args)
 
 	if (EV_IsLocal(idx))
 	{
-		gEngfuncs.pEventAPI->EV_WeaponAnimation(MP5_LAUNCH, 0);
+		gEngfuncs.pEventAPI->EV_WeaponAnimation(M4_LAUNCH, 0);
 		V_PunchAxis(0, -10);
 	}
 

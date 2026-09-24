@@ -40,6 +40,8 @@ void CSporeLauncher::Precache()
 {
 	PRECACHE_MODEL("models/w_spore_launcher.mdl");
 	PRECACHE_MODEL("models/v_spore_launcher.mdl");
+	PRECACHE_MODEL("models/v_spore_launcher_inv.mdl");
+	PRECACHE_MODEL("models/v_spore_launcher.mdl");
 	PRECACHE_MODEL("models/p_spore_launcher.mdl");
 
 	PRECACHE_SOUND("weapons/splauncher_fire.wav");
@@ -74,7 +76,29 @@ void CSporeLauncher::Spawn()
 
 bool CSporeLauncher::Deploy()
 {
+	if (m_pPlayer->m_bIsCloaked)
+		return DefaultDeploy("models/v_spore_launcher_inv.mdl", "models/p_spore_launcher.mdl", SPLAUNCHER_DRAW1, "rpg");
 	return DefaultDeploy("models/v_spore_launcher.mdl", "models/p_spore_launcher.mdl", SPLAUNCHER_DRAW1, "rpg");
+}
+
+void CSporeLauncher::UpdateVModel()
+{
+	if (!m_pPlayer->m_bIsCloaked)
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_spore_launcher.mdl");
+#else
+		LoadVModel("models/v_spore_launcher.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_spore_launcher_inv.mdl");
+#else
+		LoadVModel("models/v_spore_launcher_inv.mdl", m_pPlayer);
+#endif
+	}
 }
 
 void CSporeLauncher::Holster()
@@ -94,6 +118,8 @@ bool CSporeLauncher::ShouldWeaponIdle()
 void CSporeLauncher::WeaponIdle()
 {
 	ResetEmptySound();
+
+	UpdateVModel();
 
 	m_pPlayer->GetAutoaimVector(AUTOAIM_10DEGREES);
 
@@ -158,6 +184,7 @@ void CSporeLauncher::PrimaryAttack()
 	{
 		m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
 		m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
+		UpdateVModel();
 
 #ifndef CLIENT_DLL
 		m_pPlayer->SetAnimation(PLAYER_ATTACK1);
@@ -304,7 +331,7 @@ void CSporeLauncher::Reload()
 
 int CSporeLauncher::iItemSlot()
 {
-	return 4;
+	return 6;
 }
 
 bool CSporeLauncher::GetItemInfo(ItemInfo* p)
@@ -315,8 +342,8 @@ bool CSporeLauncher::GetItemInfo(ItemInfo* p)
 	p->pszAmmo2 = nullptr;
 	p->iMaxAmmo2 = WEAPON_NOCLIP;
 	p->iMaxClip = SPORELAUNCHER_MAX_CLIP;
-	p->iSlot = 6;
-	p->iPosition = 0;
+	p->iSlot = 5;
+	p->iPosition = 3;
 	p->iId = m_iId = WEAPON_SPORELAUNCHER;
 	p->iFlags = 0;
 	p->iWeight = SPORELAUNCHER_WEIGHT;

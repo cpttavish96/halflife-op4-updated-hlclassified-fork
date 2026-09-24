@@ -35,6 +35,7 @@ HL1_OBJS = \
 	$(HL1_OBJ_DIR)/hl/hl_objects.o \
 	$(HL1_OBJ_DIR)/hl/hl_weapons.o \
 	$(HL1_OBJ_DIR)/hud.o \
+	$(HL1_OBJ_DIR)/hud_scope.o \
 	$(HL1_OBJ_DIR)/inputw32.o \
 	$(HL1_OBJ_DIR)/ammo.o \
 	$(HL1_OBJ_DIR)/ammo_secondary.o \
@@ -92,15 +93,21 @@ HL1_PARTICLEMAN_OBJS = \
 	
 DLL_OBJS = \
 	$(WEAPONS_OBJ_DIR)/CDisplacer.o \
+	$(WEAPONS_OBJ_DIR)/CDisplacerBall.o \
 	$(WEAPONS_OBJ_DIR)/CEagle.o \
+	$(WEAPONS_OBJ_DIR)/CElite.o \
+	$(WEAPONS_OBJ_DIR)/CEagleLaser.o \
 	$(WEAPONS_OBJ_DIR)/CGrapple.o \
 	$(WEAPONS_OBJ_DIR)/CGrappleTip.o \
 	$(WEAPONS_OBJ_DIR)/CKnife.o \
 	$(WEAPONS_OBJ_DIR)/CM249.o \
+	$(WEAPONS_OBJ_DIR)/CM4.o \
 	$(WEAPONS_OBJ_DIR)/CPenguin.o \
 	$(WEAPONS_OBJ_DIR)/CPipewrench.o \
+	$(WEAPONS_OBJ_DIR)/CShockBeam.o \
 	$(WEAPONS_OBJ_DIR)/CShockRifle.o \
 	$(WEAPONS_OBJ_DIR)/CSniperRifle.o \
+	$(WEAPONS_OBJ_DIR)/CSpore.o \
 	$(WEAPONS_OBJ_DIR)/CSporeLauncher.o \
 	$(HL1_SERVER_OBJ_DIR)/crossbow.o \
 	$(HL1_SERVER_OBJ_DIR)/crowbar.o \
@@ -119,6 +126,9 @@ DLL_OBJS = \
 	$(HL1_SERVER_OBJ_DIR)/tripmine.o \
 	$(HL1_SERVER_OBJ_DIR)/weapons_shared.o \
 
+# These entities are server-only; keep them available in the source list without
+# pulling their server implementations into the client shared library.
+DLL_OBJS := $(filter-out $(WEAPONS_OBJ_DIR)/CDisplacerBall.o $(WEAPONS_OBJ_DIR)/CEagleLaser.o $(WEAPONS_OBJ_DIR)/CShockBeam.o,$(DLL_OBJS))
 
 PUBLIC_OBJS = \
 	$(PUBLIC_OBJ_DIR)/interface.o \

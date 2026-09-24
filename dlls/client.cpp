@@ -1093,11 +1093,11 @@ void ClientPrecache()
 	PRECACHE_SOUND("common/bodysplat.wav");
 
 	// player pain sounds
-	PRECACHE_SOUND("player/pl_pain2.wav");
-	PRECACHE_SOUND("player/pl_pain4.wav");
 	PRECACHE_SOUND("player/pl_pain5.wav");
 	PRECACHE_SOUND("player/pl_pain6.wav");
 	PRECACHE_SOUND("player/pl_pain7.wav");
+
+	PRECACHE_SOUND("debris/beamstart1.wav");
 
 	PRECACHE_MODEL("models/player.mdl");
 
@@ -1121,8 +1121,15 @@ void ClientPrecache()
 
 	PRECACHE_SOUND("ctf/pow_big_jump.wav");
 
+	// player pain sounds
+	PRECACHE_SOUND("player/pl_jump1.wav");
+	PRECACHE_SOUND("player/pl_jump2.wav");
+	PRECACHE_SOUND("player/pl_jump3.wav");
+
 	if (giPrecacheGrunt)
 		UTIL_PrecacheOther("monster_human_grunt");
+	if (giPrecacheFAssassin)
+		UTIL_PrecacheOther("monster_fassassin_ally");
 }
 
 /*

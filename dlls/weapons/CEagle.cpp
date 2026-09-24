@@ -15,6 +15,7 @@
 #include "extdll.h"
 #include "util.h"
 #include "cbase.h"
+#include "monsters.h"
 #include "weapons.h"
 #include "player.h"
 #include "UserMessages.h"
@@ -38,9 +39,11 @@ LINK_ENTITY_TO_CLASS(weapon_eagle, CEagle);
 void CEagle::Precache()
 {
 	PRECACHE_MODEL("models/v_desert_eagle.mdl");
+	PRECACHE_MODEL("models/v_desert_eagle_inv.mdl");
 	PRECACHE_MODEL("models/w_desert_eagle.mdl");
 	PRECACHE_MODEL("models/p_desert_eagle.mdl");
 	m_iShell = PRECACHE_MODEL("models/shell.mdl");
+	m_iClipMdl = PRECACHE_MODEL("models/w_9mmclip.mdl"); // empty clip
 	PRECACHE_SOUND("weapons/desert_eagle_fire.wav");
 	PRECACHE_SOUND("weapons/desert_eagle_reload.wav");
 	PRECACHE_SOUND("weapons/desert_eagle_sight.wav");
@@ -67,10 +70,37 @@ bool CEagle::Deploy()
 {
 	m_bSpotVisible = true;
 
+	if (m_pPlayer->m_bIsCloaked)
+	{
+		return DefaultDeploy(
+			"models/v_desert_eagle_inv.mdl", "models/p_desert_eagle.mdl",
+			EAGLE_DRAW,
+			"onehanded");
+	}
 	return DefaultDeploy(
 		"models/v_desert_eagle.mdl", "models/p_desert_eagle.mdl",
 		EAGLE_DRAW,
 		"onehanded");
+}
+
+void CEagle::UpdateVModel()
+{
+	if (!m_pPlayer->m_bIsCloaked)
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_desert_eagle.mdl");
+#else
+		LoadVModel("models/v_desert_eagle.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_desert_eagle_inv.mdl");
+#else
+		LoadVModel("models/v_desert_eagle_inv.mdl", m_pPlayer);
+#endif
+	}
 }
 
 void CEagle::Holster()
@@ -100,6 +130,7 @@ void CEagle::WeaponIdle()
 #endif
 
 	ResetEmptySound();
+	UpdateVModel();
 
 	//Update autoaim
 	m_pPlayer->GetAutoaimVector(AUTOAIM_10DEGREES);
@@ -178,6 +209,8 @@ void CEagle::PrimaryAttack()
 
 		return;
 	}
+	
+	UpdateVModel();
 
 	m_pPlayer->m_iWeaponVolume = NORMAL_GUN_VOLUME;
 	m_pPlayer->m_iWeaponFlash = NORMAL_GUN_FLASH;
@@ -265,7 +298,16 @@ void CEagle::Reload()
 {
 	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0)
 	{
-		const bool bResult = DefaultReload(EAGLE_MAX_CLIP, 0 != m_iClip ? EAGLE_RELOAD : EAGLE_RELOAD_NOSHOT, 1.5);
+		const bool bResult = DefaultReload(EAGLE_MAX_CLIP, 0 == m_iClip ? EAGLE_RELOAD_NOSHOT : EAGLE_RELOAD, 1.5);
+
+		if (0 == m_iClip)
+		{
+			Vector vecShellVelocity = m_pPlayer->pev->velocity + gpGlobals->v_right * RANDOM_FLOAT(50, 100) +
+									  gpGlobals->v_up * RANDOM_FLOAT(100, 150) + gpGlobals->v_forward * 25;
+			EjectBrass(pev->origin + m_pPlayer->pev->view_ofs + gpGlobals->v_up * -12 + gpGlobals->v_forward * 20 +
+						   gpGlobals->v_right * 8,
+				vecShellVelocity, pev->angles.y, m_iClipMdl, BOUNCE_METAL);
+		}
 
 #ifndef CLIENT_DLL
 		//Only turn it off if we're actually reloading
@@ -333,7 +375,7 @@ bool CEagle::GetItemInfo(ItemInfo* p)
 	p->iMaxAmmo2 = WEAPON_NOCLIP;
 	p->iMaxClip = EAGLE_MAX_CLIP;
 	p->iSlot = 1;
-	p->iPosition = 2;
+	p->iPosition = 3;
 	p->iFlags = 0;
 	p->iId = m_iId = WEAPON_EAGLE;
 	p->iWeight = EAGLE_WEIGHT;

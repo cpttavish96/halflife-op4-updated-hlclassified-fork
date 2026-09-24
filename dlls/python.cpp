@@ -35,7 +35,7 @@ bool CPython::GetItemInfo(ItemInfo* p)
 	p->iMaxClip = PYTHON_MAX_CLIP;
 	p->iFlags = 0;
 	p->iSlot = 1;
-	p->iPosition = 1;
+	p->iPosition = 2;
 	p->iId = m_iId = WEAPON_PYTHON;
 	p->iWeight = PYTHON_WEIGHT;
 
@@ -66,6 +66,7 @@ void CPython::Spawn()
 void CPython::Precache()
 {
 	PRECACHE_MODEL("models/v_357.mdl");
+	PRECACHE_MODEL("models/v_357_inv.mdl");
 	PRECACHE_MODEL("models/w_357.mdl");
 	PRECACHE_MODEL("models/p_357.mdl");
 
@@ -96,9 +97,30 @@ bool CPython::Deploy()
 		pev->body = 0;
 	}
 
+	if (m_pPlayer->m_bIsCloaked)
+		return DefaultDeploy("models/v_357_inv.mdl", "models/p_357.mdl", PYTHON_DRAW, "python", pev->body);
 	return DefaultDeploy("models/v_357.mdl", "models/p_357.mdl", PYTHON_DRAW, "python", pev->body);
 }
 
+void CPython::UpdateVModel()
+{
+	if (!m_pPlayer->m_bIsCloaked)
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_357.mdl");
+#else
+		LoadVModel("models/v_357.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_357_inv.mdl");
+#else
+		LoadVModel("models/v_357_inv.mdl", m_pPlayer);
+#endif
+	}
+}
 
 void CPython::Holster()
 {
@@ -157,7 +179,7 @@ void CPython::PrimaryAttack()
 
 		return;
 	}
-
+	UpdateVModel();
 	m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
 	m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
 
@@ -219,7 +241,7 @@ void CPython::Reload()
 void CPython::WeaponIdle()
 {
 	ResetEmptySound();
-
+	UpdateVModel();
 	m_pPlayer->GetAutoaimVector(AUTOAIM_10DEGREES);
 
 	if (m_flTimeWeaponIdle > UTIL_WeaponTimeBase())

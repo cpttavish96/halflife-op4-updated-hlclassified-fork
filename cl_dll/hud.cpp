@@ -342,6 +342,7 @@ void CHud::Init()
 	HOOK_MESSAGE(HudColor);
 	HOOK_MESSAGE(OldWeapon);
 	HOOK_MESSAGE(Weapons);
+	// HOOK_MESSAGE(Cloak);
 
 	// TFFree CommandMenu
 	HOOK_COMMAND("+commandmenu", OpenCommandMenu);
@@ -427,6 +428,7 @@ void CHud::Init()
 	m_AmmoSecondary.Init();
 	m_TextMessage.Init();
 	m_StatusIcons.Init();
+	m_Scope.Init(); // Poke646 - crossbow scope
 	m_FlagIcons.Init();
 	m_PlayerBrowse.Init();
 	GetClientVoiceMgr()->Init(&g_VoiceStatusHelper, (vgui::Panel**)&gViewPort);
@@ -486,10 +488,17 @@ void CHud::VidInit()
 	m_hsprLogo = 0;
 	m_hsprCursor = 0;
 
+	//if (ScreenWidth < 1920)
+	//	m_iRes = 320;
+	//else
+	//	m_iRes = 640;
+
 	if (ScreenWidth < 640)
 		m_iRes = 320;
-	else
+	else if (ScreenWidth < 1280)
 		m_iRes = 640;
+	else
+		m_iRes = 2560;
 
 	// Only load this once
 	if (!m_pSpriteList)
@@ -575,6 +584,7 @@ void CHud::VidInit()
 	m_AmmoSecondary.VidInit();
 	m_TextMessage.VidInit();
 	m_StatusIcons.VidInit();
+	m_Scope.VidInit(); // Poke646 - crossbow scope
 	m_FlagIcons.VidInit();
 	m_PlayerBrowse.VidInit();
 	GetClientVoiceMgr()->VidInit();
@@ -588,6 +598,31 @@ bool CHud::MsgFunc_Logo(const char* pszName, int iSize, void* pbuf)
 	m_iLogo = READ_BYTE();
 
 	return true;
+}
+
+int CHud::MsgFunc_Cloak(const char* pszName, int iSize, void* pbuf)
+{
+	BEGIN_READ(pbuf, iSize);
+	int bCloak = READ_BYTE();
+
+	cl_entity_t* pViewModel = gEngfuncs.GetViewModel();
+	if (pViewModel)
+	{
+		if (bCloak)
+		{
+			pViewModel->curstate.renderamt = 50; // Example transparency value
+			pViewModel->curstate.rendermode = kRenderTransTexture;
+			pViewModel->curstate.renderfx = kRenderFxHologram;
+		}
+		else
+		{
+			pViewModel->curstate.renderamt = 255; // Fully opaque
+			pViewModel->curstate.rendermode = kRenderNormal;
+			pViewModel->curstate.renderfx = kRenderFxNone;
+		}
+	}
+
+	return 1;
 }
 
 float g_lastFOV = 0.0;

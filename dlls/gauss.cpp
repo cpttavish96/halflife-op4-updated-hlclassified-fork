@@ -60,6 +60,7 @@ void CGauss::Precache()
 {
 	PRECACHE_MODEL("models/w_gauss.mdl");
 	PRECACHE_MODEL("models/v_gauss.mdl");
+	PRECACHE_MODEL("models/v_gauss_inv.mdl");
 	PRECACHE_MODEL("models/p_gauss.mdl");
 
 	PRECACHE_SOUND("items/9mmclip1.wav");
@@ -106,7 +107,29 @@ void CGauss::IncrementAmmo(CBasePlayer* pPlayer)
 bool CGauss::Deploy()
 {
 	m_pPlayer->m_flPlayAftershock = 0.0;
+	if (m_pPlayer->m_bIsCloaked)
+		return DefaultDeploy("models/v_gauss_inv.mdl", "models/p_gauss.mdl", GAUSS_DRAW, "gauss");
 	return DefaultDeploy("models/v_gauss.mdl", "models/p_gauss.mdl", GAUSS_DRAW, "gauss");
+}
+
+void CGauss::UpdateVModel()
+{
+	if (!m_pPlayer->m_bIsCloaked)
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_gauss.mdl");
+#else
+		LoadVModel("models/v_gauss.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_gauss_inv.mdl");
+#else
+		LoadVModel("models/v_gauss_inv.mdl", m_pPlayer);
+#endif
+	}
 }
 
 void CGauss::Holster()
@@ -136,6 +159,7 @@ void CGauss::PrimaryAttack()
 		m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 0.5;
 		return;
 	}
+	UpdateVModel();
 
 	m_pPlayer->m_iWeaponVolume = GAUSS_PRIMARY_FIRE_VOLUME;
 	m_fPrimaryFire = true;
@@ -169,6 +193,8 @@ void CGauss::SecondaryAttack()
 		m_flNextSecondaryAttack = m_flNextPrimaryAttack = GetNextAttackDelay(0.5);
 		return;
 	}
+
+	UpdateVModel();
 
 	if (m_fInAttack == 0)
 	{
@@ -527,6 +553,7 @@ void CGauss::Fire(Vector vecOrigSrc, Vector vecDir, float flDamage)
 void CGauss::WeaponIdle()
 {
 	ResetEmptySound();
+	UpdateVModel();
 
 	// play aftershock static discharge
 	if (0 != m_pPlayer->m_flPlayAftershock && m_pPlayer->m_flPlayAftershock < gpGlobals->time)
