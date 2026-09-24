@@ -283,31 +283,28 @@ void CCrossbow::IncrementAmmo(CBasePlayer* pPlayer)
 
 bool CCrossbow::Deploy()
 {
-	if (m_pPlayer->m_bIsCloaked)
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 		return DefaultDeploy("models/v_crossbow_inv.mdl", "models/p_crossbow.mdl", CROSSBOW_DRAW1, "bow");
 	
-	// if (0 != m_iClip)
-	
 	return DefaultDeploy("models/v_crossbow.mdl", "models/p_crossbow.mdl", CROSSBOW_DRAW1, "bow");
-	// return DefaultDeploy("models/v_crossbow.mdl", "models/p_crossbow.mdl", CROSSBOW_DRAW2, "bow");
 }
 
 void CCrossbow::UpdateVModel()
 {
-	if (!m_pPlayer->m_bIsCloaked)
-	{
-#ifndef CLIENT_DLL
-		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_crossbow.mdl");
-#else
-		LoadVModel("models/v_crossbow.mdl", m_pPlayer);
-#endif
-	}
-	else
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 	{
 #ifndef CLIENT_DLL
 		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_crossbow_inv.mdl");
 #else
 		LoadVModel("models/v_crossbow_inv.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_crossbow.mdl");
+#else
+		LoadVModel("models/v_crossbow.mdl", m_pPlayer);
 #endif
 	}
 }

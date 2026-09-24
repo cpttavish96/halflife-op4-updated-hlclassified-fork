@@ -107,27 +107,27 @@ void CGauss::IncrementAmmo(CBasePlayer* pPlayer)
 bool CGauss::Deploy()
 {
 	m_pPlayer->m_flPlayAftershock = 0.0;
-	if (m_pPlayer->m_bIsCloaked)
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 		return DefaultDeploy("models/v_gauss_inv.mdl", "models/p_gauss.mdl", GAUSS_DRAW, "gauss");
 	return DefaultDeploy("models/v_gauss.mdl", "models/p_gauss.mdl", GAUSS_DRAW, "gauss");
 }
 
 void CGauss::UpdateVModel()
 {
-	if (!m_pPlayer->m_bIsCloaked)
-	{
-#ifndef CLIENT_DLL
-		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_gauss.mdl");
-#else
-		LoadVModel("models/v_gauss.mdl", m_pPlayer);
-#endif
-	}
-	else
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 	{
 #ifndef CLIENT_DLL
 		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_gauss_inv.mdl");
 #else
 		LoadVModel("models/v_gauss_inv.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_gauss.mdl");
+#else
+		LoadVModel("models/v_gauss.mdl", m_pPlayer);
 #endif
 	}
 }
@@ -230,6 +230,18 @@ void CGauss::SecondaryAttack()
 		{
 			SendWeaponAnim(GAUSS_SPIN);
 			m_fInAttack = 2;
+
+			// Manually uncloaking when doing a Secondary Attack with this weapon
+			if (m_pPlayer->pev->flags & FL_NOTARGET)
+			{
+				EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_VOICE, "debris/beamstart1.wav", 0.6, ATTN_NORM);
+				m_pPlayer->m_flFlashLightTime = 0.2 + gpGlobals->time;
+
+				m_pPlayer->pev->renderamt = m_pPlayer->m_iTargetRanderamt;
+				m_pPlayer->pev->rendermode = kRenderNormal;
+
+				m_pPlayer->pev->flags -= FL_NOTARGET;
+			}
 		}
 	}
 	else

@@ -92,7 +92,7 @@ void CMP5::IncrementAmmo(CBasePlayer* pPlayer)
 
 bool CMP5::Deploy()
 {
-	if (m_pPlayer->m_bIsCloaked)
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 		return DefaultDeploy("models/v_9mmAR_inv.mdl", "models/p_9mmAR.mdl", MP5_DEPLOY, "mp5");
 	return DefaultDeploy("models/v_9mmAR.mdl", "models/p_9mmAR.mdl", MP5_DEPLOY, "mp5");
 }
@@ -223,20 +223,20 @@ void CMP5::Reload()
 
 void CMP5::UpdateVModel()
 {
-	if (!m_pPlayer->m_bIsCloaked)
-	{
-#ifndef CLIENT_DLL
-		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_9mmAR.mdl");
-#else
-		LoadVModel("models/v_9mmAR.mdl", m_pPlayer);
-#endif
-	}
-	else
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 	{
 #ifndef CLIENT_DLL
 		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_9mmAR_inv.mdl");
 #else
 		LoadVModel("models/v_9mmAR_inv.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_9mmAR.mdl");
+#else
+		LoadVModel("models/v_9mmAR.mdl", m_pPlayer);
 #endif
 	}
 }

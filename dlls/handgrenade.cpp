@@ -85,27 +85,27 @@ void CHandGrenade::IncrementAmmo(CBasePlayer* pPlayer)
 bool CHandGrenade::Deploy()
 {
 	m_flReleaseThrow = -1;
-	if (m_pPlayer->m_bIsCloaked)
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 		return DefaultDeploy("models/v_grenade_inv.mdl", "models/p_grenade.mdl", HANDGRENADE_DRAW, "crowbar");
 	return DefaultDeploy("models/v_grenade.mdl", "models/p_grenade.mdl", HANDGRENADE_DRAW, "crowbar");
 }
 
 void CHandGrenade::UpdateVModel()
 {
-	if (!m_pPlayer->m_bIsCloaked)
-	{
-#ifndef CLIENT_DLL
-		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_grenade.mdl");
-#else
-		LoadVModel("models/v_grenade.mdl", m_pPlayer);
-#endif
-	}
-	else
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 	{
 #ifndef CLIENT_DLL
 		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_grenade_inv.mdl");
 #else
 		LoadVModel("models/v_grenade_inv.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_grenade.mdl");
+#else
+		LoadVModel("models/v_grenade.mdl", m_pPlayer);
 #endif
 	}
 }

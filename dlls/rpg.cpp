@@ -387,7 +387,7 @@ void CRpg::IncrementAmmo(CBasePlayer* pPlayer)
 
 bool CRpg::Deploy()
 {
-	if (m_pPlayer->m_bIsCloaked)
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 		return DefaultDeploy("models/v_rpg_inv.mdl", "models/p_rpg.mdl", RPG_DRAW_UL, "rpg");
 
 	return DefaultDeploy("models/v_rpg.mdl", "models/p_rpg.mdl", RPG_DRAW1, "rpg");
@@ -395,20 +395,20 @@ bool CRpg::Deploy()
 
 void CRpg::UpdateVModel()
 {
-	if (!m_pPlayer->m_bIsCloaked)
-	{
-#ifndef CLIENT_DLL
-		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_rpg.mdl");
-#else
-		LoadVModel("models/v_rpg.mdl", m_pPlayer);
-#endif
-	}
-	else
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 	{
 #ifndef CLIENT_DLL
 		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_rpg_inv.mdl");
 #else
 		LoadVModel("models/v_rpg_inv.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_rpg.mdl");
+#else
+		LoadVModel("models/v_rpg.mdl", m_pPlayer);
 #endif
 	}
 }

@@ -277,19 +277,19 @@ bool CSatchel::Deploy()
 
 	bool result;
 
-	if (!m_pPlayer->m_bIsCloaked)
-	{
-		if (0 != m_chargeReady)
-			result = DefaultDeploy("models/v_satchel_radio.mdl", "models/p_satchel_radio.mdl", SATCHEL_RADIO_DRAW, "hive");
-		else
-			result = DefaultDeploy("models/v_satchel.mdl", "models/p_satchel.mdl", SATCHEL_DRAW, "trip");
-	}
-	else
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 	{
 		if (0 != m_chargeReady)
 			result = DefaultDeploy("models/v_satchel_radio_inv.mdl", "models/p_satchel_radio.mdl", SATCHEL_RADIO_DRAW, "hive");
 		else
 			result = DefaultDeploy("models/v_satchel_inv.mdl", "models/p_satchel.mdl", SATCHEL_DRAW, "trip");
+	}
+	else
+	{
+		if (0 != m_chargeReady)
+			result = DefaultDeploy("models/v_satchel_radio.mdl", "models/p_satchel_radio.mdl", SATCHEL_RADIO_DRAW, "hive");
+		else
+			result = DefaultDeploy("models/v_satchel.mdl", "models/p_satchel.mdl", SATCHEL_DRAW, "trip");
 	}
 
 	if (result)
@@ -302,26 +302,7 @@ bool CSatchel::Deploy()
 
 void CSatchel::UpdateVModel()
 {
-	if (!m_pPlayer->m_bIsCloaked)
-	{
-		if (0 != m_chargeReady)
-		{
-#ifndef CLIENT_DLL
-			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_satchel_radio.mdl");
-#else
-			LoadVModel("models/v_satchel_radio.mdl", m_pPlayer);
-#endif
-		}
-		else
-		{
-#ifndef CLIENT_DLL
-			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_satchel.mdl");
-#else
-			LoadVModel("models/v_satchel.mdl", m_pPlayer);
-#endif
-		}
-	}
-	else
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 	{
 		if (0 != m_chargeReady)
 		{
@@ -337,6 +318,25 @@ void CSatchel::UpdateVModel()
 			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_satchel_inv.mdl");
 #else
 			LoadVModel("models/v_satchel_inv.mdl", m_pPlayer);
+#endif
+		}
+	}
+	else
+	{
+		if (0 != m_chargeReady)
+		{
+#ifndef CLIENT_DLL
+			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_satchel_radio.mdl");
+#else
+			LoadVModel("models/v_satchel_radio.mdl", m_pPlayer);
+#endif
+		}
+		else
+		{
+#ifndef CLIENT_DLL
+			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_satchel.mdl");
+#else
+			LoadVModel("models/v_satchel.mdl", m_pPlayer);
 #endif
 		}
 	}
@@ -439,6 +439,17 @@ void CSatchel::Throw()
 #else
 		LoadVModel("models/v_satchel_radio.mdl", m_pPlayer);
 #endif
+		// Manually uncloaking when doing a Secondary Attack with this weapon
+		if (m_pPlayer->pev->flags & FL_NOTARGET)
+		{
+			EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_VOICE, "debris/beamstart1.wav", 0.6, ATTN_NORM);
+			m_pPlayer->m_flFlashLightTime = 0.2 + gpGlobals->time;
+
+			m_pPlayer->pev->renderamt = m_pPlayer->m_iTargetRanderamt;
+			m_pPlayer->pev->rendermode = kRenderNormal;
+
+			m_pPlayer->pev->flags -= FL_NOTARGET;
+		}
 
 		SendWeaponAnim(SATCHEL_RADIO_DRAW);
 

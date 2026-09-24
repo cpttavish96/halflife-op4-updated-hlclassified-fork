@@ -94,27 +94,27 @@ void CShotgun::IncrementAmmo(CBasePlayer* pPlayer)
 
 bool CShotgun::Deploy()
 {
-	if (m_pPlayer->m_bIsCloaked)
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 		return DefaultDeploy("models/v_shotgun_inv.mdl", "models/p_shotgun.mdl", SHOTGUN_DRAW, "shotgun");
 	return DefaultDeploy("models/v_shotgun.mdl", "models/p_shotgun.mdl", SHOTGUN_DRAW, "shotgun");
 }
 
 void CShotgun::UpdateVModel()
 {
-	if (!m_pPlayer->m_bIsCloaked)
-	{
-#ifndef CLIENT_DLL
-		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_shotgun.mdl");
-#else
-		LoadVModel("models/v_shotgun.mdl", m_pPlayer);
-#endif
-	}
-	else
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 	{
 #ifndef CLIENT_DLL
 		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_shotgun_inv.mdl");
 #else
 		LoadVModel("models/v_shotgun_inv.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_shotgun.mdl");
+#else
+		LoadVModel("models/v_shotgun.mdl", m_pPlayer);
 #endif
 	}
 }
@@ -210,6 +210,18 @@ void CShotgun::SecondaryAttack()
 		return;
 	}
 	UpdateVModel();
+
+	// Manually uncloaking when doing a Secondary Attack with this weapon
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
+	{
+		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_VOICE, "debris/beamstart1.wav", 0.6, ATTN_NORM);
+		m_pPlayer->m_flFlashLightTime = 0.2 + gpGlobals->time;
+
+		m_pPlayer->pev->renderamt = m_pPlayer->m_iTargetRanderamt;
+		m_pPlayer->pev->rendermode = kRenderNormal;
+
+		m_pPlayer->pev->flags -= FL_NOTARGET;
+	}
 
 	m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
 	m_pPlayer->m_iWeaponFlash = NORMAL_GUN_FLASH;

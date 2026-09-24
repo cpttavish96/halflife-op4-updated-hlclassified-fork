@@ -74,27 +74,27 @@ void CDisplacer::Spawn()
 
 bool CDisplacer::Deploy()
 {
-	if (m_pPlayer->m_bIsCloaked)
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 		return DefaultDeploy("models/v_displacer_inv.mdl", "models/p_displacer.mdl", DISPLACER_DRAW, "egon");
 	return DefaultDeploy("models/v_displacer.mdl", "models/p_displacer.mdl", DISPLACER_DRAW, "egon");
 }
 
 void CDisplacer::UpdateVModel()
 {
-	if (!m_pPlayer->m_bIsCloaked)
-	{
-#ifndef CLIENT_DLL
-		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_displacer.mdl");
-#else
-		LoadVModel("models/v_displacer.mdl", m_pPlayer);
-#endif
-	}
-	else
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 	{
 #ifndef CLIENT_DLL
 		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_displacer_inv.mdl");
 #else
 		LoadVModel("models/v_displacer_inv.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_displacer.mdl");
+#else
+		LoadVModel("models/v_displacer.mdl", m_pPlayer);
 #endif
 	}
 }
@@ -191,6 +191,18 @@ void CDisplacer::SecondaryAttack()
 		EMIT_SOUND(m_pPlayer->edict(), CHAN_WEAPON, "weapons/displacer_spin2.wav", RANDOM_FLOAT(0.8, 0.9), ATTN_NORM);
 
 		m_flTimeWeaponIdle = m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.5;
+
+		// Manually uncloaking when doing a Secondary Attack with this weapon
+		if (m_pPlayer->pev->flags & FL_NOTARGET)
+		{
+			EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_VOICE, "debris/beamstart1.wav", 0.6, ATTN_NORM);
+			m_pPlayer->m_flFlashLightTime = 0.2 + gpGlobals->time;
+
+			m_pPlayer->pev->renderamt = m_pPlayer->m_iTargetRanderamt;
+			m_pPlayer->pev->rendermode = kRenderNormal;
+
+			m_pPlayer->pev->flags -= FL_NOTARGET;
+		}
 	}
 	else
 	{
