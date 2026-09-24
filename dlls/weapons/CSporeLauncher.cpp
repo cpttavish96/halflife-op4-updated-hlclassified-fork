@@ -76,27 +76,27 @@ void CSporeLauncher::Spawn()
 
 bool CSporeLauncher::Deploy()
 {
-	if (m_pPlayer->m_bIsCloaked)
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 		return DefaultDeploy("models/v_spore_launcher_inv.mdl", "models/p_spore_launcher.mdl", SPLAUNCHER_DRAW1, "rpg");
 	return DefaultDeploy("models/v_spore_launcher.mdl", "models/p_spore_launcher.mdl", SPLAUNCHER_DRAW1, "rpg");
 }
 
 void CSporeLauncher::UpdateVModel()
 {
-	if (!m_pPlayer->m_bIsCloaked)
-	{
-#ifndef CLIENT_DLL
-		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_spore_launcher.mdl");
-#else
-		LoadVModel("models/v_spore_launcher.mdl", m_pPlayer);
-#endif
-	}
-	else
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 	{
 #ifndef CLIENT_DLL
 		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_spore_launcher_inv.mdl");
 #else
 		LoadVModel("models/v_spore_launcher_inv.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_spore_launcher.mdl");
+#else
+		LoadVModel("models/v_spore_launcher.mdl", m_pPlayer);
 #endif
 	}
 }
@@ -272,6 +272,18 @@ void CSporeLauncher::SecondaryAttack()
 		PLAYBACK_EVENT(flags, m_pPlayer->edict(), m_usFireSpore);
 
 		--m_iClip;
+	}
+
+	// Manually uncloaking when doing a Secondary Attack with this weapon
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
+	{
+		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_VOICE, "debris/beamstart1.wav", 0.6, ATTN_NORM);
+		m_pPlayer->m_flFlashLightTime = 0.2 + gpGlobals->time;
+
+		m_pPlayer->pev->renderamt = m_pPlayer->m_iTargetRanderamt;
+		m_pPlayer->pev->rendermode = kRenderNormal;
+
+		m_pPlayer->pev->flags -= FL_NOTARGET;
 	}
 
 	m_flNextPrimaryAttack = m_flNextSecondaryAttack = m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;

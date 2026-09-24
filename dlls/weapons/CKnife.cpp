@@ -71,7 +71,7 @@ void CKnife::Spawn()
 
 bool CKnife::Deploy()
 {
-	if (m_pPlayer->m_bIsCloaked)
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 		return DefaultDeploy(
 			"models/v_knife_inv.mdl", "models/p_knife.mdl",
 			KNIFE_DRAW, "crowbar");
@@ -82,20 +82,20 @@ bool CKnife::Deploy()
 
 void CKnife::UpdateVModel()
 {
-	if (!m_pPlayer->m_bIsCloaked)
-	{
-#ifndef CLIENT_DLL
-		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_knife.mdl");
-#else
-		LoadVModel("models/v_knife.mdl", m_pPlayer);
-#endif
-	}
-	else
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 	{
 #ifndef CLIENT_DLL
 		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_knife_inv.mdl");
 #else
 		LoadVModel("models/v_knife_inv.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_knife.mdl");
+#else
+		LoadVModel("models/v_knife.mdl", m_pPlayer);
 #endif
 	}
 }
@@ -128,6 +128,8 @@ void CKnife::BigSwing()
 
 	UTIL_TraceLine(vecSrc, vecEnd, dont_ignore_monsters, ENT(m_pPlayer->pev), &tr);
 
+	UpdateVModel();
+
 #ifndef CLIENT_DLL
 	if (tr.flFraction >= 1.0)
 	{
@@ -159,6 +161,17 @@ void CKnife::BigSwing()
 		break;
 	}
 
+	// Manually uncloaking when doing a Secondary Attack with this weapon
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
+	{
+		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_VOICE, "debris/beamstart1.wav", 0.6, ATTN_NORM);
+		m_pPlayer->m_flFlashLightTime = 0.2 + gpGlobals->time;
+
+		m_pPlayer->pev->renderamt = m_pPlayer->m_iTargetRanderamt;
+		m_pPlayer->pev->rendermode = kRenderNormal;
+
+		m_pPlayer->pev->flags -= FL_NOTARGET;
+	}
 
 	if (tr.flFraction >= 1.0)
 	{

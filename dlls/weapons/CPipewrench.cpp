@@ -77,27 +77,27 @@ void CPipewrench::Precache()
 
 bool CPipewrench::Deploy()
 {
-	if (m_pPlayer->m_bIsCloaked)
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 		return DefaultDeploy("models/v_pipe_wrench_inv.mdl", "models/p_pipe_wrench.mdl", PIPEWRENCH_DRAW, "crowbar");
 	return DefaultDeploy("models/v_pipe_wrench.mdl", "models/p_pipe_wrench.mdl", PIPEWRENCH_DRAW, "crowbar");
 }
 
 void CPipewrench::UpdateVModel()
 {
-	if (!m_pPlayer->m_bIsCloaked)
-	{
-#ifndef CLIENT_DLL
-		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_pipe_wrench.mdl");
-#else
-		LoadVModel("models/v_pipe_wrench.mdl", m_pPlayer);
-#endif
-	}
-	else
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 	{
 #ifndef CLIENT_DLL
 		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_pipe_wrench_inv.mdl");
 #else
 		LoadVModel("models/v_pipe_wrench_inv.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_pipe_wrench.mdl");
+#else
+		LoadVModel("models/v_pipe_wrench.mdl", m_pPlayer);
 #endif
 	}
 }
@@ -362,6 +362,18 @@ void CPipewrench::BigSwing()
 		0.0, 1, static_cast<int>(tr.flFraction < 1));
 
 	EMIT_SOUND_DYN(edict(), CHAN_WEAPON, "weapons/pwrench_big_miss.wav", VOL_NORM, ATTN_NORM, 0, 94 + RANDOM_LONG(0, 15));
+
+	// Manually uncloaking when doing a Secondary Attack with this weapon
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
+	{
+		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_VOICE, "debris/beamstart1.wav", 0.6, ATTN_NORM);
+		m_pPlayer->m_flFlashLightTime = 0.2 + gpGlobals->time;
+
+		m_pPlayer->pev->renderamt = m_pPlayer->m_iTargetRanderamt;
+		m_pPlayer->pev->rendermode = kRenderNormal;
+
+		m_pPlayer->pev->flags -= FL_NOTARGET;
+	}
 
 	if (tr.flFraction >= 1.0)
 	{

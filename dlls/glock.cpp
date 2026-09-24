@@ -113,38 +113,19 @@ bool CGlock::Deploy()
 	m_bIsHolstered = false;
 
 	if (!m_bIsAkimbo) {
-		if (m_pPlayer->m_bIsCloaked)
+		if (m_pPlayer->pev->flags & FL_NOTARGET)
 			return DefaultDeploy("models/v_9mmhandgun_silenced_inv.mdl", "models/p_9mmhandgun_silenced.mdl", GLOCK_DRAW, "onehanded");
 		return DefaultDeploy("models/v_9mmhandgun_silenced.mdl", "models/p_9mmhandgun_silenced.mdl", GLOCK_DRAW, "onehanded");
 	}
 
-	if (m_pPlayer->m_bIsCloaked)
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 		return DefaultDeploy("models/v_elite_inv.mdl", "models/p_elite.mdl", ELITE_DRAW, "egon");
 	return DefaultDeploy("models/v_elite.mdl", "models/p_elite.mdl", ELITE_DRAW, "egon");
 }
 
 void CGlock::UpdateVModel()
 {
-	if (!m_pPlayer->m_bIsCloaked)
-	{
-		if (!m_bIsAkimbo)
-		{
-#ifndef CLIENT_DLL
-			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_9mmhandgun_silenced.mdl");
-#else
-			LoadVModel("models/v_9mmhandgun_silenced.mdl", m_pPlayer);
-#endif
-		}
-		else 
-		{
-#ifndef CLIENT_DLL
-			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_elite.mdl");
-#else
-			LoadVModel("models/v_elite.mdl", m_pPlayer);
-#endif
-		}
-	}
-	else
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 	{
 		if (!m_bIsAkimbo)
 		{
@@ -160,6 +141,25 @@ void CGlock::UpdateVModel()
 			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_elite_inv.mdl");
 #else
 			LoadVModel("models/v_elite_inv.mdl", m_pPlayer);
+#endif
+		}
+	}
+	else
+	{
+		if (!m_bIsAkimbo)
+		{
+#ifndef CLIENT_DLL
+			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_9mmhandgun_silenced.mdl");
+#else
+			LoadVModel("models/v_9mmhandgun_silenced.mdl", m_pPlayer);
+#endif
+		}
+		else 
+		{
+#ifndef CLIENT_DLL
+			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_elite.mdl");
+#else
+			LoadVModel("models/v_elite.mdl", m_pPlayer);
 #endif
 		}
 	}
@@ -190,20 +190,20 @@ void CGlock::SecondaryAttack()
 			m_iClipLeft = m_iClip;
 			m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] -= m_iClip;
 
-			if (!m_pPlayer->m_bIsCloaked)
-			{
-#ifndef CLIENT_DLL
-				m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_elite.mdl");
-#else
-				LoadVModel("models/v_elite.mdl", m_pPlayer);
-#endif
-			}
-			else
+			if (m_pPlayer->pev->flags & FL_NOTARGET)
 			{
 #ifndef CLIENT_DLL
 				m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_elite_inv.mdl");
 #else
 				LoadVModel("models/v_elite_inv.mdl", m_pPlayer);
+#endif
+			}
+			else
+			{
+#ifndef CLIENT_DLL
+				m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_elite.mdl");
+#else
+				LoadVModel("models/v_elite.mdl", m_pPlayer);
 #endif
 			}
 			m_pPlayer->pev->weaponmodel = MAKE_STRING("models/p_elite.mdl");
@@ -224,20 +224,20 @@ void CGlock::SecondaryAttack()
 		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] += m_iClipLeft;
 		m_iClipLeft = 0;
 		
-		if (!m_pPlayer->m_bIsCloaked)
-		{
-#ifndef CLIENT_DLL
-			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_9mmhandgun_silenced.mdl");
-#else
-			LoadVModel("models/v_9mmhandgun_silenced.mdl", m_pPlayer);
-#endif
-		}
-		else
+		if (m_pPlayer->pev->flags & FL_NOTARGET)
 		{
 #ifndef CLIENT_DLL
 			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_9mmhandgun_silenced_inv.mdl");
 #else
 			LoadVModel("models/v_9mmhandgun_silenced_inv.mdl", m_pPlayer);
+#endif
+		}
+		else
+		{
+#ifndef CLIENT_DLL
+			m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_9mmhandgun_silenced.mdl");
+#else
+			LoadVModel("models/v_9mmhandgun_silenced.mdl", m_pPlayer);
 #endif
 		}
 		m_pPlayer->pev->weaponmodel = MAKE_STRING("models/p_9mmhandgun_silenced.mdl");
@@ -498,7 +498,7 @@ void CGlock::WeaponIdle()
 	ResetEmptySound();
 	UpdateVModel();
 
-	ALERT(at_console, "m_iClip=%d\n m_iClipLeft=%d", m_iClip, m_iClipLeft);
+	// ALERT(at_console, "m_iClip = %d\nm_iClipLeft = %d\n\n", m_iClip, m_iClipLeft);
 
 	m_pPlayer->GetAutoaimVector(AUTOAIM_10DEGREES);
 

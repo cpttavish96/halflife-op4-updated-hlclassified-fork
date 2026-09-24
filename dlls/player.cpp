@@ -1959,7 +1959,8 @@ void CBasePlayer::PreThink()
 		PlayerDeathThink();
 		return;
 	}
-
+	
+	// ALERT(at_console, "pev->flags & FL_NOTARGET = %s\n", pev->flags & FL_NOTARGET ? "true" : "false");
 	// So the correct flags get sent to client asap.
 	//
 	if ((m_afPhysicsFlags & PFLAG_ONTRAIN) != 0)
@@ -2167,18 +2168,15 @@ void CBasePlayer::PreThink()
 	}
 
 	// Tavi: If we're cloaked and attacking, uncloak
-	if (m_bIsCloaked && (pev->button & (IN_ATTACK)) != 0)
+	if ((pev->flags & FL_NOTARGET) && ((pev->button & IN_ATTACK) != 0))
 	{
 		EMIT_SOUND(ENT(pev), CHAN_VOICE, "debris/beamstart1.wav", 0.6, ATTN_NORM);
+		m_flFlashLightTime = FLASH_CHARGE_TIME + gpGlobals->time;
 
 		pev->renderamt = m_iTargetRanderamt;
 		pev->rendermode = kRenderNormal;
 
 		pev->flags -= FL_NOTARGET;
-		// pev->flags -= FL_SPECTATOR;
-		m_bIsCloaked = false;
-
-		m_flFlashLightTime = FLASH_CHARGE_TIME + gpGlobals->time;
 	}
 
 	// If trying to duck, already ducked, or in the process of ducking
@@ -3128,6 +3126,8 @@ void CBasePlayer::Spawn()
 {
 	m_bIsSpawning = true;
 
+	ALERT(at_console, "CBasePlayer::Spawn()\n");
+
 	//Make sure this gets reset even if somebody adds an early return or throws an exception.
 	const CallOnDestroy resetIsSpawning{[this]()
 		{
@@ -3274,33 +3274,25 @@ void CBasePlayer::Cloak()
 	if (!FBitSet(m_afButtonPressed, IN_CLOAK))
 		return;
 
-	if (!m_bIsCloaked)
+	if (pev->flags & FL_NOTARGET)
 	{
 		EMIT_SOUND(ENT(pev), CHAN_VOICE, "debris/beamstart1.wav", 0.6, ATTN_NORM);
-
-		pev->renderamt = m_iTargetRanderamt - 200;
-		pev->rendermode = kRenderTransTexture;
-
-		pev->flags += FL_NOTARGET;
-		// pev->flags += FL_SPECTATOR;
-		m_bIsCloaked = true;
-
-		// Tavi: update flashlight battery hud item
-		m_flFlashLightTime = FLASH_DRAIN_TIME / 12 + gpGlobals->time;
-	}
-	else
-	{
-		EMIT_SOUND(ENT(pev), CHAN_VOICE, "debris/beamstart1.wav", 0.6, ATTN_NORM);
+		m_flFlashLightTime = FLASH_CHARGE_TIME + gpGlobals->time;
 
 		pev->renderamt = m_iTargetRanderamt;
 		pev->rendermode = kRenderNormal;
 
 		pev->flags -= FL_NOTARGET;
-		// pev->flags -= FL_SPECTATOR;
-		m_bIsCloaked = false;
+	}
+	else
+	{
+		EMIT_SOUND(ENT(pev), CHAN_VOICE, "debris/beamstart1.wav", 0.6, ATTN_NORM);
+		m_flFlashLightTime = FLASH_DRAIN_TIME / 12 + gpGlobals->time;
 
-		// Tavi: update flashlight battery hud item
-		m_flFlashLightTime = FLASH_CHARGE_TIME + gpGlobals->time;
+		pev->renderamt = m_iTargetRanderamt - 200;
+		pev->rendermode = kRenderTransTexture;
+
+		pev->flags += FL_NOTARGET;
 	}
 }
 
@@ -4291,7 +4283,7 @@ void CBasePlayer::ItemPreFrame()
 	if (viewEntity)
 	{
 		// Tavi:
-		if (m_bIsCloaked)
+		if (pev->flags & FL_NOTARGET)
 		{
 			// ALERT(at_console, "PreThink:: you are cloacked!!!\n");
 			m_pActiveItem->pev->renderamt = m_iTargetRanderamt - 200;
@@ -4600,11 +4592,11 @@ void CBasePlayer::UpdateClientData()
 	// Update Flashlight
 	if ((0 != m_flFlashLightTime) && (m_flFlashLightTime <= gpGlobals->time))
 	{
-		if (FlashlightIsOn() || m_bIsCloaked)
+		if (FlashlightIsOn() || (pev->flags & FL_NOTARGET))
 		{
 			if (0 != m_iFlashBattery)
 			{
-				if (m_bIsCloaked)
+				if (pev->flags & FL_NOTARGET)
 					m_flFlashLightTime = FLASH_DRAIN_TIME / 12 + gpGlobals->time;
 				else
 					m_flFlashLightTime = FLASH_DRAIN_TIME + gpGlobals->time;
@@ -4613,7 +4605,7 @@ void CBasePlayer::UpdateClientData()
 
 				if (0 == m_iFlashBattery) {
 					// Tavi: Uncloak if we run out of flashlight power
-					if (m_bIsCloaked)
+					if (pev->flags & FL_NOTARGET)
 					{
 						EMIT_SOUND(ENT(pev), CHAN_VOICE, "debris/beamstart1.wav", 0.6, ATTN_NORM);
 
@@ -4621,8 +4613,6 @@ void CBasePlayer::UpdateClientData()
 						pev->rendermode = kRenderNormal;
 
 						pev->flags -= FL_NOTARGET;
-						// pev->flags -= FL_SPECTATOR;
-						m_bIsCloaked = false;
 					}
 					FlashlightTurnOff();
 				}
@@ -4630,7 +4620,11 @@ void CBasePlayer::UpdateClientData()
 		}
 		else
 		{
-			if (!m_bIsCloaked)
+			if (pev->flags & FL_NOTARGET)
+			{
+				ALERT(at_console, "Player is notarget and flashlight is off\n");
+			}
+			else
 			{
 				if (m_iFlashBattery < 100)
 				{

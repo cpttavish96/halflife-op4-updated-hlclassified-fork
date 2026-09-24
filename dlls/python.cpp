@@ -97,27 +97,27 @@ bool CPython::Deploy()
 		pev->body = 0;
 	}
 
-	if (m_pPlayer->m_bIsCloaked)
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 		return DefaultDeploy("models/v_357_inv.mdl", "models/p_357.mdl", PYTHON_DRAW, "python", pev->body);
 	return DefaultDeploy("models/v_357.mdl", "models/p_357.mdl", PYTHON_DRAW, "python", pev->body);
 }
 
 void CPython::UpdateVModel()
 {
-	if (!m_pPlayer->m_bIsCloaked)
-	{
-#ifndef CLIENT_DLL
-		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_357.mdl");
-#else
-		LoadVModel("models/v_357.mdl", m_pPlayer);
-#endif
-	}
-	else
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 	{
 #ifndef CLIENT_DLL
 		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_357_inv.mdl");
 #else
 		LoadVModel("models/v_357_inv.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_357.mdl");
+#else
+		LoadVModel("models/v_357.mdl", m_pPlayer);
 #endif
 	}
 }

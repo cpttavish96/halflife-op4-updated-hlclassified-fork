@@ -467,7 +467,7 @@ bool CSqueak::Deploy()
 
 	m_pPlayer->m_iWeaponVolume = QUIET_GUN_VOLUME;
 	bool result;
-	if (m_pPlayer->m_bIsCloaked)
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 		result = DefaultDeploy("models/v_squeak_inv.mdl", "models/p_squeak.mdl", SQUEAK_UP, "squeak");
 	else
 		result = DefaultDeploy("models/v_squeak.mdl", "models/p_squeak.mdl", SQUEAK_UP, "squeak");
@@ -482,20 +482,20 @@ bool CSqueak::Deploy()
 
 void CSqueak::UpdateVModel()
 {
-	if (!m_pPlayer->m_bIsCloaked)
-	{
-#ifndef CLIENT_DLL
-		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_squeak.mdl");
-#else
-		LoadVModel("models/v_squeak.mdl", m_pPlayer);
-#endif
-	}
-	else
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 	{
 #ifndef CLIENT_DLL
 		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_squeak_inv.mdl");
 #else
 		LoadVModel("models/v_squeak_inv.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_squeak.mdl");
+#else
+		LoadVModel("models/v_squeak.mdl", m_pPlayer);
 #endif
 	}
 }
