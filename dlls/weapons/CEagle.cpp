@@ -70,7 +70,7 @@ bool CEagle::Deploy()
 {
 	m_bSpotVisible = true;
 
-	if (m_pPlayer->m_bIsCloaked)
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 	{
 		return DefaultDeploy(
 			"models/v_desert_eagle_inv.mdl", "models/p_desert_eagle.mdl",
@@ -85,20 +85,20 @@ bool CEagle::Deploy()
 
 void CEagle::UpdateVModel()
 {
-	if (!m_pPlayer->m_bIsCloaked)
-	{
-#ifndef CLIENT_DLL
-		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_desert_eagle.mdl");
-#else
-		LoadVModel("models/v_desert_eagle.mdl", m_pPlayer);
-#endif
-	}
-	else
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 	{
 #ifndef CLIENT_DLL
 		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_desert_eagle_inv.mdl");
 #else
 		LoadVModel("models/v_desert_eagle_inv.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_desert_eagle.mdl");
+#else
+		LoadVModel("models/v_desert_eagle.mdl", m_pPlayer);
 #endif
 	}
 }

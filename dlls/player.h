@@ -444,7 +444,6 @@ public:
 	//True if the player is currently spawning.
 	bool m_bIsSpawning = false;
 	int m_iTargetRanderamt = 255;
-	bool m_bIsCloaked = false;
 };
 
 inline void CBasePlayer::SetWeaponBit(int id)

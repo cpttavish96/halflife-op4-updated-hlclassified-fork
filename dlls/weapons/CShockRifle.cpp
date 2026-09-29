@@ -104,27 +104,27 @@ bool CShockRifle::Deploy()
 		m_flRechargeTime = gpGlobals->time + 0.5;
 	}
 
-	if (m_pPlayer->m_bIsCloaked)
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 		return DefaultDeploy("models/v_shock_inv.mdl", "models/p_shock.mdl", SHOCKRIFLE_DRAW, "bow");
 	return DefaultDeploy("models/v_shock.mdl", "models/p_shock.mdl", SHOCKRIFLE_DRAW, "bow");
 }
 
 void CShockRifle::UpdateVModel()
 {
-	if (!m_pPlayer->m_bIsCloaked)
-	{
-#ifndef CLIENT_DLL
-		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_shock.mdl");
-#else
-		LoadVModel("models/v_shock.mdl", m_pPlayer);
-#endif
-	}
-	else
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 	{
 #ifndef CLIENT_DLL
 		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_shock_inv.mdl");
 #else
 		LoadVModel("models/v_shock_inv.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_shock.mdl");
+#else
+		LoadVModel("models/v_shock.mdl", m_pPlayer);
 #endif
 	}
 }

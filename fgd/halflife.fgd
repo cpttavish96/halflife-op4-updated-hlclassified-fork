@@ -2774,7 +2774,6 @@
 
 @PointClass base(Weapon, Targetx) studio("models/w_crowbar.mdl") = weapon_crowbar : "Crowbar" []
 @PointClass base(Weapon, Targetx) studio("models/w_9mmhandgun.mdl") = weapon_9mmhandgun : "9mm Handgun" []
-@PointClass base(Weapon, Targetx) studio("models/w_elite.mdl") = weapon_elite : "9mm Handgun X2" []
 @PointClass base(Weapon, Targetx) studio("models/w_357.mdl") = weapon_357 : "357 Handgun" []
 @PointClass base(Weapon, Targetx, RenderFields) studio("models/w_ump45.mdl") = weapon_9mmAR : "MP5 SMG" []
 @PointClass base(Weapon, Targetx) studio("models/w_9mmar_dual.mdl") = weapon_9mmAR_dual : "9mm Assault Rifle Dual" []

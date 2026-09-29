@@ -77,27 +77,27 @@ void CM249::Spawn()
 
 bool CM249::Deploy()
 {
-	if (m_pPlayer->m_bIsCloaked)
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 		return DefaultDeploy("models/v_saw_inv.mdl", "models/p_saw.mdl", M249_DRAW, "mp5");
 	return DefaultDeploy("models/v_saw.mdl", "models/p_saw.mdl", M249_DRAW, "mp5");
 }
 
 void CM249::UpdateVModel()
 {
-	if (!m_pPlayer->m_bIsCloaked)
-	{
-#ifndef CLIENT_DLL
-		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_saw.mdl");
-#else
-		LoadVModel("models/v_saw.mdl", m_pPlayer);
-#endif
-	}
-	else
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 	{
 #ifndef CLIENT_DLL
 		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_saw_inv.mdl");
 #else
 		LoadVModel("models/v_saw_inv.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_saw.mdl");
+#else
+		LoadVModel("models/v_saw.mdl", m_pPlayer);
 #endif
 	}
 }

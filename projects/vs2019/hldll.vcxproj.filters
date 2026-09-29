@@ -585,9 +585,6 @@
     <ClCompile Include="..\..\dlls\weapons\CM4.cpp">
       <Filter>Source Files\dlls\weapons</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\dlls\weapons\CElite.cpp">
-      <Filter>Source Files\dlls\weapons</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\dlls\fassassin.cpp">
       <Filter>Source Files\dlls</Filter>
     </ClCompile>
@@ -963,9 +960,6 @@
       <Filter>Header Files\public</Filter>
     </ClInclude>
     <ClInclude Include="..\..\dlls\weapons\CM4.h">
-      <Filter>Header Files\dlls\weapons</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\dlls\weapons\CElite.h">
       <Filter>Header Files\dlls\weapons</Filter>
     </ClInclude>
     <ClInclude Include="..\..\dlls\fassassin.h">

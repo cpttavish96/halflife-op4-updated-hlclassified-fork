@@ -413,27 +413,27 @@ bool CTripmine::GetItemInfo(ItemInfo* p)
 bool CTripmine::Deploy()
 {
 	pev->body = 0;
-	if (m_pPlayer->m_bIsCloaked)
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 		return DefaultDeploy("models/v_tripmine_inv.mdl", "models/p_tripmine.mdl", TRIPMINE_DRAW, "trip");
 	return DefaultDeploy("models/v_tripmine.mdl", "models/p_tripmine.mdl", TRIPMINE_DRAW, "trip");
 }
 
 void CTripmine::UpdateVModel()
 {
-	if (!m_pPlayer->m_bIsCloaked)
-	{
-#ifndef CLIENT_DLL
-		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_tripmine.mdl");
-#else
-		LoadVModel("models/v_tripmine.mdl", m_pPlayer);
-#endif
-	}
-	else
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 	{
 #ifndef CLIENT_DLL
 		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_tripmine_inv.mdl");
 #else
 		LoadVModel("models/v_tripmine_inv.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_tripmine.mdl");
+#else
+		LoadVModel("models/v_tripmine.mdl", m_pPlayer);
 #endif
 	}
 }

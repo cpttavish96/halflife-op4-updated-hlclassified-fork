@@ -88,27 +88,27 @@ void CGrapple::Spawn()
 
 bool CGrapple::Deploy()
 {
-	if (m_pPlayer->m_bIsCloaked)
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 		return DefaultDeploy("models/v_bgrap_inv.mdl", "models/p_bgrap.mdl", BGRAPPLE_UP, "gauss");
 	return DefaultDeploy("models/v_bgrap.mdl", "models/p_bgrap.mdl", BGRAPPLE_UP, "gauss");
 }
 
 void CGrapple::UpdateVModel()
 {
-	if (!m_pPlayer->m_bIsCloaked)
-	{
-#ifndef CLIENT_DLL
-		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_bgrap.mdl");
-#else
-		LoadVModel("models/v_bgrap.mdl", m_pPlayer);
-#endif
-	}
-	else
+	if (m_pPlayer->pev->flags & FL_NOTARGET)
 	{
 #ifndef CLIENT_DLL
 		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_bgrap_inv.mdl");
 #else
 		LoadVModel("models/v_bgrap_inv.mdl", m_pPlayer);
+#endif
+	}
+	else
+	{
+#ifndef CLIENT_DLL
+		m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_bgrap.mdl");
+#else
+		LoadVModel("models/v_bgrap.mdl", m_pPlayer);
 #endif
 	}
 }
