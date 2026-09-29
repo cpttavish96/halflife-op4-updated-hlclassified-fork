@@ -170,7 +170,7 @@ void CKnife::BigSwing()
 		m_pPlayer->pev->renderamt = m_pPlayer->m_iTargetRanderamt;
 		m_pPlayer->pev->rendermode = kRenderNormal;
 
-		m_pPlayer->pev->flags -= FL_NOTARGET;
+		ClearBits(m_pPlayer->pev->flags, FL_NOTARGET);
 	}
 
 	if (tr.flFraction >= 1.0)
@@ -325,7 +325,7 @@ void CKnife::SecondaryAttack()
 	if (m_iSwingMode != STAB_START)
 	{
 		SendWeaponAnim(KNIFE_CHARGE);
-		m_flBigSwingStart = gpGlobals->time;
+		m_flBigSwingStart = 0.0f; // gpGlobals->time / 2.5;
 	}
 
 	m_iSwingMode = STAB_START;

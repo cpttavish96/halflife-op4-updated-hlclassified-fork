@@ -240,7 +240,7 @@ void CGauss::SecondaryAttack()
 				m_pPlayer->pev->renderamt = m_pPlayer->m_iTargetRanderamt;
 				m_pPlayer->pev->rendermode = kRenderNormal;
 
-				m_pPlayer->pev->flags -= FL_NOTARGET;
+				ClearBits(m_pPlayer->pev->flags, FL_NOTARGET);
 			}
 		}
 	}
