@@ -2176,7 +2176,7 @@ void CBasePlayer::PreThink()
 		pev->renderamt = m_iTargetRanderamt;
 		pev->rendermode = kRenderNormal;
 
-		pev->flags -= FL_NOTARGET;
+		ClearBits(pev->flags, FL_NOTARGET);
 	}
 
 	// If trying to duck, already ducked, or in the process of ducking
@@ -3282,7 +3282,7 @@ void CBasePlayer::Cloak()
 		pev->renderamt = m_iTargetRanderamt;
 		pev->rendermode = kRenderNormal;
 
-		pev->flags -= FL_NOTARGET;
+		ClearBits(pev->flags, FL_NOTARGET);;
 	}
 	else
 	{
@@ -4612,7 +4612,7 @@ void CBasePlayer::UpdateClientData()
 						pev->renderamt = m_iTargetRanderamt;
 						pev->rendermode = kRenderNormal;
 
-						pev->flags -= FL_NOTARGET;
+						ClearBits(pev->flags, FL_NOTARGET);;
 					}
 					FlashlightTurnOff();
 				}

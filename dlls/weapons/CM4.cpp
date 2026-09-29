@@ -271,7 +271,7 @@ void CM4::SecondaryAttack()
 		m_pPlayer->pev->renderamt = m_pPlayer->m_iTargetRanderamt;
 		m_pPlayer->pev->rendermode = kRenderNormal;
 
-		m_pPlayer->pev->flags -= FL_NOTARGET;
+		ClearBits(m_pPlayer->pev->flags, FL_NOTARGET);
 	}
 
 	m_pPlayer->m_iWeaponVolume = NORMAL_GUN_VOLUME;

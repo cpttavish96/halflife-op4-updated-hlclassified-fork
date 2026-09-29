@@ -44,6 +44,145 @@ void VectorAngles(const float* forward, float* angles);
 #include "com_model.h"
 #include "kbutton.h"
 
+// ------------------------------------------------------------------------
+// Physical lazy viewmodel
+// ------------------------------------------------------------------------
+
+static float g_LazyViewmodelAngles[3];
+static float g_LazyViewmodelAngularVelocity[3];
+
+static int g_LazyViewmodelInitialized = 0;
+static int g_LazyViewmodelModelIndex = -1;
+
+static float V_LazyNormalizeAngle(float angle)
+{
+    while (angle > 180.0f)
+        angle -= 360.0f;
+
+    while (angle < -180.0f)
+        angle += 360.0f;
+
+    return angle;
+}
+
+static void V_ResetLazyViewmodel(
+    float pitch,
+    float yaw,
+    float roll,
+    int modelIndex)
+{
+    g_LazyViewmodelAngles[PITCH] = pitch;
+    g_LazyViewmodelAngles[YAW]   = yaw;
+    g_LazyViewmodelAngles[ROLL]  = roll;
+
+    g_LazyViewmodelAngularVelocity[PITCH] = 0.0f;
+    g_LazyViewmodelAngularVelocity[YAW]   = 0.0f;
+    g_LazyViewmodelAngularVelocity[ROLL]  = 0.0f;
+
+    g_LazyViewmodelModelIndex = modelIndex;
+    g_LazyViewmodelInitialized = 1;
+}
+
+static void V_UpdateLazyViewmodelSpring(
+    float *targetAngles,
+    float frameTime)
+{
+        float springFrequency;
+    float stiffness;
+    float damping;
+    float acceleration;
+    float error;
+    float dt;
+    int i;
+
+    /*
+     * Prevent instability after a long frame.
+
+     * A spring can become unstable if it receives a very large
+     * timestep, such as after pausing the game or alt-tabbing.
+     */
+    dt = frameTime;
+
+    if (dt < 0.0f)
+        dt = 0.0f;
+
+    if (dt > 0.05f)
+        dt = 0.05f;
+
+    /*
+     * Natural frequency of the spring.
+
+     * Higher values make the viewmodel catch up faster.
+     *
+     * Approximate behavior:
+     *
+     *   6.0  = very loose
+     *   10.0 = soft
+     *   12.0 = good starting value
+     *   16.0 = responsive
+     *   24.0 = nearly immediate
+     */
+    springFrequency = 32.0f;
+
+    /*
+     * Convert the frequency into spring parameters.
+
+     * stiffness controls how strongly the viewmodel is pulled toward
+     * the target.
+
+     * Critical damping is:
+     *
+     *     damping = 2 * sqrt(stiffness)
+     *
+     * Since stiffness = frequency squared, this simplifies to:
+     *
+     *     damping = 2 * frequency
+     */
+    stiffness = springFrequency * springFrequency;
+    damping = 2.8f * springFrequency;
+
+    for (i = 0; i < 3; i++)
+    {
+        /*
+         * Calculate the shortest angular distance to the target.
+         */
+        error =
+            V_LazyNormalizeAngle(
+                targetAngles[i] -
+                g_LazyViewmodelAngles[i]);
+
+        /*
+         * Critically damped spring:
+
+         * acceleration =
+         *     spring force
+         *     - damping force
+         */
+        acceleration =
+            error * stiffness -
+            g_LazyViewmodelAngularVelocity[i] * damping;
+
+        /*
+         * Semi-implicit Euler integration.
+
+         * Update velocity first, then position. This is more stable
+         * than updating position before velocity.
+         */
+        g_LazyViewmodelAngularVelocity[i] +=
+            acceleration * dt;
+
+        g_LazyViewmodelAngles[i] +=
+            g_LazyViewmodelAngularVelocity[i] * dt;
+
+        /*
+         * Keep angles bounded.
+         */
+        g_LazyViewmodelAngles[i] =
+            V_LazyNormalizeAngle(
+                g_LazyViewmodelAngles[i]);
+    }
+}
+
 extern engine_studio_api_t IEngineStudio;
 
 extern kbutton_t in_mlook;
@@ -369,19 +508,114 @@ V_CalcGunAngle
 */
 void V_CalcGunAngle(struct ref_params_s* pparams)
 {
-	cl_entity_t* viewent;
+	cl_entity_t *viewent;
 
-	viewent = gEngfuncs.GetViewModel();
-	if (!viewent)
-		return;
+    float targetAngles[3];
+    float frameTime;
+    int modelIndex;
 
-	viewent->angles[YAW] = pparams->viewangles[YAW] + pparams->crosshairangle[YAW];
-	viewent->angles[PITCH] = -pparams->viewangles[PITCH] + pparams->crosshairangle[PITCH] * 0.25;
-	viewent->angles[ROLL] -= v_idlescale * sin(pparams->time * v_iroll_cycle.value) * v_iroll_level.value;
+    viewent = gEngfuncs.GetViewModel();
 
-	// don't apply all of the v_ipitch to prevent normally unseen parts of viewmodel from coming into view.
-	viewent->angles[PITCH] -= v_idlescale * sin(pparams->time * v_ipitch_cycle.value) * (v_ipitch_level.value * 0.5);
-	viewent->angles[YAW] -= v_idlescale * sin(pparams->time * v_iyaw_cycle.value) * v_iyaw_level.value;
+    if ( !viewent )
+    {
+        /*
+         * The viewmodel can disappear during death, spectator mode,
+         * level changes, or transitions between weapons.
+         */
+        g_LazyViewmodelInitialized = 0;
+        g_LazyViewmodelModelIndex = -1;
+
+        return;
+    }
+
+    /*
+     * Calculate the desired viewmodel orientation.
+
+     * GoldSrc uses an inverted pitch for the weapon viewmodel.
+     */
+    targetAngles[YAW] =
+        pparams->viewangles[YAW] +
+        pparams->crosshairangle[YAW];
+
+    targetAngles[PITCH] =
+        -pparams->viewangles[PITCH] +
+        pparams->crosshairangle[PITCH] * 0.25f;
+
+    /*
+     * The original code modifies viewent->angles[ROLL] directly.
+     * For the spring implementation, use zero as the base roll and
+     * calculate the idle roll as part of the target orientation.
+     */
+    targetAngles[ROLL] =
+        -v_idlescale *
+        sin(pparams->time * v_iroll_cycle.value) *
+        v_iroll_level.value;
+
+    /*
+     * Preserve the original idle pitch effect.
+
+     * The original source intentionally uses only half of the pitch
+     * idle amount so normally hidden parts of the model do not become
+     * visible.
+     */
+    targetAngles[PITCH] -=
+        v_idlescale *
+        sin(pparams->time * v_ipitch_cycle.value) *
+        (v_ipitch_level.value * 0.5f);
+
+    /*
+     * Preserve the original idle yaw effect.
+     */
+    targetAngles[YAW] -=
+        v_idlescale *
+        sin(pparams->time * v_iyaw_cycle.value) *
+        v_iyaw_level.value;
+
+    /*
+     * Reset the spring on first use or when the weapon model changes.
+     */
+    modelIndex = viewent->curstate.modelindex;
+
+    if ( !g_LazyViewmodelInitialized ||
+         modelIndex != g_LazyViewmodelModelIndex )
+    {
+        V_ResetLazyViewmodel(
+            targetAngles[PITCH],
+            targetAngles[YAW],
+            targetAngles[ROLL],
+            modelIndex);
+
+        viewent->angles[PITCH] = targetAngles[PITCH];
+        viewent->angles[YAW]   = targetAngles[YAW];
+        viewent->angles[ROLL]  = targetAngles[ROLL];
+
+        return;
+    }
+
+    /*
+     * Use the frame time supplied by the engine.
+     */
+    frameTime = pparams->frametime;
+
+    /*
+     * Move the viewmodel orientation toward the target using the
+     * critically damped spring.
+     */
+    V_UpdateLazyViewmodelSpring(
+        targetAngles,
+        frameTime);
+
+    /*
+     * Copy the spring result to the actual viewmodel entity.
+     */
+    viewent->angles[PITCH] =
+        g_LazyViewmodelAngles[PITCH];
+
+    viewent->angles[YAW] =
+        g_LazyViewmodelAngles[YAW];
+
+    viewent->angles[ROLL] =
+        g_LazyViewmodelAngles[ROLL];
 
 	VectorCopy(viewent->angles, viewent->curstate.angles);
 	VectorCopy(viewent->angles, viewent->latched.prevangles);
