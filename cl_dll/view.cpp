@@ -83,11 +83,9 @@ static void V_ResetLazyViewmodel(
     g_LazyViewmodelInitialized = 1;
 }
 
-static void V_UpdateLazyViewmodelSpring(
-    float *targetAngles,
-    float frameTime)
+static void V_UpdateLazyViewmodelSpring(float *targetAngles,float frameTime)
 {
-        float springFrequency;
+    float springFrequency;
     float stiffness;
     float damping;
     float acceleration;
@@ -95,12 +93,6 @@ static void V_UpdateLazyViewmodelSpring(
     float dt;
     int i;
 
-    /*
-     * Prevent instability after a long frame.
-
-     * A spring can become unstable if it receives a very large
-     * timestep, such as after pausing the game or alt-tabbing.
-     */
     dt = frameTime;
 
     if (dt < 0.0f)
@@ -109,77 +101,21 @@ static void V_UpdateLazyViewmodelSpring(
     if (dt > 0.05f)
         dt = 0.05f;
 
-    /*
-     * Natural frequency of the spring.
-
-     * Higher values make the viewmodel catch up faster.
-     *
-     * Approximate behavior:
-     *
-     *   6.0  = very loose
-     *   10.0 = soft
-     *   12.0 = good starting value
-     *   16.0 = responsive
-     *   24.0 = nearly immediate
-     */
     springFrequency = 32.0f;
 
-    /*
-     * Convert the frequency into spring parameters.
-
-     * stiffness controls how strongly the viewmodel is pulled toward
-     * the target.
-
-     * Critical damping is:
-     *
-     *     damping = 2 * sqrt(stiffness)
-     *
-     * Since stiffness = frequency squared, this simplifies to:
-     *
-     *     damping = 2 * frequency
-     */
     stiffness = springFrequency * springFrequency;
-    damping = 2.8f * springFrequency;
+    damping = 2.75f * springFrequency;
 
     for (i = 0; i < 3; i++)
     {
-        /*
-         * Calculate the shortest angular distance to the target.
-         */
-        error =
-            V_LazyNormalizeAngle(
-                targetAngles[i] -
-                g_LazyViewmodelAngles[i]);
+        error = V_LazyNormalizeAngle(targetAngles[i] - g_LazyViewmodelAngles[i]);
 
-        /*
-         * Critically damped spring:
+        acceleration = error * stiffness - g_LazyViewmodelAngularVelocity[i] * damping;
 
-         * acceleration =
-         *     spring force
-         *     - damping force
-         */
-        acceleration =
-            error * stiffness -
-            g_LazyViewmodelAngularVelocity[i] * damping;
+        g_LazyViewmodelAngularVelocity[i] += acceleration * dt;
+        g_LazyViewmodelAngles[i] += g_LazyViewmodelAngularVelocity[i] * dt;
 
-        /*
-         * Semi-implicit Euler integration.
-
-         * Update velocity first, then position. This is more stable
-         * than updating position before velocity.
-         */
-        g_LazyViewmodelAngularVelocity[i] +=
-            acceleration * dt;
-
-        g_LazyViewmodelAngles[i] +=
-            g_LazyViewmodelAngularVelocity[i] * dt;
-
-        /*
-         * Keep angles bounded.
-         */
-        g_LazyViewmodelAngles[i] =
-            V_LazyNormalizeAngle(
-                g_LazyViewmodelAngles[i]);
+        g_LazyViewmodelAngles[i] = V_LazyNormalizeAngle(g_LazyViewmodelAngles[i]);
     }
 }
 
