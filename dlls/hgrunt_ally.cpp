@@ -52,9 +52,9 @@ extern DLL_GLOBAL int g_iSkillLevel;
 //=========================================================
 // monster-specific DEFINE's
 //=========================================================
-#define GRUNT_MP5_CLIP_SIZE 36 // how many bullets in a clip? - NOTE: 3 round burst sound, so keep as 3 * x!
+#define GRUNT_MP5_CLIP_SIZE 30 // how many bullets in a clip? - NOTE: 3 round burst sound, so keep as 3 * x!
 #define GRUNT_SHOTGUN_CLIP_SIZE 8
-#define GRUNT_SAW_CLIP_SIZE 36
+#define GRUNT_SNIPER_CLIP_SIZE 5
 #define GRUNT_VOL 0.35		 // volume of grunt sounds
 #define GRUNT_ATTN ATTN_NORM // attenutation of grunt sentences
 #define HGRUNT_LIMP_HEALTH 20
@@ -70,8 +70,7 @@ enum HGruntAllyWeaponFlag
 	MP5 = 1 << 0,
 	HandGrenade = 1 << 1,
 	GrenadeLauncher = 1 << 2,
-	Shotgun = 1 << 3,
-	Saw = 1 << 4
+	SniperRifle = 1 << 3
 };
 }
 
@@ -80,8 +79,7 @@ namespace HGruntAllyBodygroup
 enum HGruntAllyBodygroup
 {
 	Head = 1,
-	Torso = 2,
-	Weapons = 3
+	Weapons = 2
 };
 }
 
@@ -90,25 +88,9 @@ namespace HGruntAllyHead
 enum HGruntAllyHead
 {
 	Default = -1,
-	GasMask = 0,
-	BeretWhite,
-	OpsMask,
-	BandanaWhite,
-	BandanaBlack,
-	MilitaryPolice,
-	Commander,
-	BeretBlack,
-};
-}
-
-namespace HGruntAllyTorso
-{
-enum HGruntAllyTorso
-{
-	Normal = 0,
-	Saw,
-	Nothing,
-	Shotgun
+	White = 0,
+	Black,
+	ThermalVision
 };
 }
 
@@ -117,8 +99,8 @@ namespace HGruntAllyWeapon
 enum HGruntAllyWeapon
 {
 	MP5 = 0,
-	Shotgun,
-	Saw,
+	SniperRifle,
+	M4,
 	None
 };
 }
@@ -217,7 +199,7 @@ public:
 
 	void DeclineFollowing() override;
 
-	void ShootSaw();
+	void ShootSniperRifle();
 
 	bool KeyValue(KeyValueData* pkvd) override;
 
@@ -358,14 +340,13 @@ void CHGruntAlly::GibMonster()
 		GetAttachment(0, vecGunPos, vecGunAngles);
 
 		CBaseEntity* pGun;
-		if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::Shotgun))
+		if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::SniperRifle))
 		{
-			pGun = DropItem("weapon_shotgun", vecGunPos, vecGunAngles);
-		}
-		else if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::Saw))
-		{
-			// pGun = DropItem("weapon_m249", vecGunPos, vecGunAngles);
 			pGun = DropItem("weapon_sniperrifle", vecGunPos, vecGunAngles);
+		}
+		else if(FBitSet(pev->weapons, HGruntAllyWeaponFlag::GrenadeLauncher))
+		{
+			pGun = DropItem("weapon_m4", vecGunPos, vecGunAngles);
 		}
 		else
 		{
@@ -530,7 +511,7 @@ bool CHGruntAlly::CheckRangeAttack1(float flDot, float flDist)
 	//Only if we have a weapon
 	if ((pev->weapons) != 0)
 	{
-		const auto maxDistance = (pev->weapons & HGruntAllyWeaponFlag::Shotgun) != 0 ? 640 : 1024;
+		const auto maxDistance = 1024; // (pev->weapons & HGruntAllyWeaponFlag::None) != 0 ? 640 : 1024;
 
 		//Friendly fire is allowed
 		if (!HasConditions(bits_COND_ENEMY_OCCLUDED) && flDist <= maxDistance && flDot >= 0.5 /*&& NoFriendlyFire()*/)
@@ -950,7 +931,7 @@ void CHGruntAlly::Shoot()
 
 	Vector vecShellVelocity = gpGlobals->v_right * RANDOM_FLOAT(40, 90) + gpGlobals->v_up * RANDOM_FLOAT(75, 200) + gpGlobals->v_forward * RANDOM_FLOAT(-40, 40);
 	EjectBrass(vecShootOrigin - vecShootDir * 24, vecShellVelocity, pev->angles.y, m_iBrassShell, TE_BOUNCE_SHELL);
-	FireBullets(1, vecShootOrigin, vecShootDir, VECTOR_CONE_10DEGREES, 2048, BULLET_MONSTER_MP5); // shoot +-5 degrees
+	FireBullets(3, vecShootOrigin, vecShootDir, VECTOR_CONE_10DEGREES, 2048, BULLET_MONSTER_MP5); // shoot +-5 degrees
 
 	pev->effects |= EF_MUZZLEFLASH;
 
@@ -958,6 +939,21 @@ void CHGruntAlly::Shoot()
 
 	Vector angDir = UTIL_VecToAngles(vecShootDir);
 	SetBlending(0, angDir.x);
+	
+	if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::MP5))
+	{
+		if (RANDOM_LONG(0, 1))
+			EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/hks1.wav", 1, ATTN_NORM);
+		else
+			EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/hks2.wav", 1, ATTN_NORM);
+	}
+	else
+	{
+		if (RANDOM_LONG(0, 1))
+			EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/m41.wav", 1, ATTN_NORM);
+		else
+			EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/m42.wav", 1, ATTN_NORM);
+	}
 }
 
 //=========================================================
@@ -1009,23 +1005,18 @@ void CHGruntAlly::HandleAnimEvent(MonsterEvent_t* pEvent)
 		SetBodygroup(HGruntAllyBodygroup::Weapons, HGruntAllyWeapon::None);
 
 		// now spawn a gun.
-		if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::Shotgun))
+		if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::SniperRifle))
 		{
-			DropItem("weapon_shotgun", vecGunPos, vecGunAngles);
-		}
-		else if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::Saw))
-		{
-			 // DropItem("weapon_m249", vecGunPos, vecGunAngles);
 			DropItem("weapon_sniperrifle", vecGunPos, vecGunAngles);
+		}
+		else if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::GrenadeLauncher))
+		{
+			DropItem("weapon_m4", vecGunPos, vecGunAngles);
+			DropItem("ammo_ARgrenades", BodyTarget(pev->origin), vecGunAngles);
 		}
 		else
 		{
 			DropItem("weapon_9mmAR", vecGunPos, vecGunAngles);
-		}
-
-		if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::GrenadeLauncher))
-		{
-			DropItem("ammo_ARgrenades", BodyTarget(pev->origin), vecGunAngles);
 		}
 
 		m_iWeaponIdx = HGruntAllyWeapon::None;
@@ -1033,7 +1024,7 @@ void CHGruntAlly::HandleAnimEvent(MonsterEvent_t* pEvent)
 	break;
 
 	case HGRUNT_AE_RELOAD:
-		if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::Saw))
+		if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::SniperRifle))
 		{
 			EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/sniper_reload_first_seq.wav", 1, ATTN_NORM);
 		}
@@ -1077,29 +1068,13 @@ void CHGruntAlly::HandleAnimEvent(MonsterEvent_t* pEvent)
 
 	case HGRUNT_AE_BURST1:
 	{
-		if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::MP5))
+		if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::SniperRifle))
 		{
-			Shoot();
-
-			// the first round of the three round burst plays the sound and puts a sound in the world sound list.
-			if (RANDOM_LONG(0, 1))
-			{
-				EMIT_SOUND(ENT(pev), CHAN_WEAPON, "hgrunt/gr_mgun1.wav", 1, ATTN_NORM);
-			}
-			else
-			{
-				EMIT_SOUND(ENT(pev), CHAN_WEAPON, "hgrunt/gr_mgun2.wav", 1, ATTN_NORM);
-			}
-		}
-		else if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::Saw))
-		{
-			ShootSaw();
+			ShootSniperRifle();
 		}
 		else
 		{
-			Shotgun();
-
-			EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/sbarrel1.wav", 1, ATTN_NORM);
+			Shoot();
 		}
 
 		CSoundEnt::InsertSound(bits_SOUND_COMBAT, pev->origin, 384, 0.3);
@@ -1108,7 +1083,7 @@ void CHGruntAlly::HandleAnimEvent(MonsterEvent_t* pEvent)
 
 	case HGRUNT_AE_BURST2:
 	case HGRUNT_AE_BURST3:
-		if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::MP5))
+		if (!FBitSet(pev->weapons, HGruntAllyWeaponFlag::SniperRifle))
 		{
 			Shoot();
 		}
@@ -1178,24 +1153,21 @@ void CHGruntAlly::Spawn()
 
 	//Note: this code has been rewritten to use SetBodygroup since it relies on hardcoded offsets in the original
 	pev->body = 0;
-	m_iGruntTorso = HGruntAllyTorso::Normal;
 
 	if ((pev->weapons & HGruntAllyWeaponFlag::MP5) != 0)
 	{
 		m_iWeaponIdx = HGruntAllyWeapon::MP5;
 		m_cClipSize = GRUNT_MP5_CLIP_SIZE;
 	}
-	else if ((pev->weapons & HGruntAllyWeaponFlag::Shotgun) != 0)
+	else if ((pev->weapons & HGruntAllyWeaponFlag::GrenadeLauncher) != 0)
 	{
-		m_cClipSize = GRUNT_SHOTGUN_CLIP_SIZE;
-		m_iWeaponIdx = HGruntAllyWeapon::Shotgun;
-		m_iGruntTorso = HGruntAllyTorso::Shotgun;
+		m_iWeaponIdx = HGruntAllyWeapon::M4;
+		m_cClipSize = GRUNT_MP5_CLIP_SIZE;
 	}
-	else if ((pev->weapons & HGruntAllyWeaponFlag::Saw) != 0)
+	else if ((pev->weapons & HGruntAllyWeaponFlag::SniperRifle) != 0)
 	{
-		m_iWeaponIdx = HGruntAllyWeapon::Saw;
-		m_cClipSize = GRUNT_SAW_CLIP_SIZE;
-		m_iGruntTorso = HGruntAllyTorso::Saw;
+		m_cClipSize = GRUNT_SNIPER_CLIP_SIZE;
+		m_iWeaponIdx = HGruntAllyWeapon::SniperRifle;
 	}
 	else
 	{
@@ -1207,37 +1179,28 @@ void CHGruntAlly::Spawn()
 
 	if (m_iGruntHead == HGruntAllyHead::Default)
 	{
-		if ((pev->spawnflags & SF_SQUADMONSTER_LEADER) != 0)
+		switch (RANDOM_LONG(0, 2))
 		{
-			m_iGruntHead = HGruntAllyHead::BeretWhite;
-		}
-		else if (m_iWeaponIdx == HGruntAllyWeapon::Shotgun)
-		{
-			m_iGruntHead = HGruntAllyHead::OpsMask;
-		}
-		else if (m_iWeaponIdx == HGruntAllyWeapon::Saw)
-		{
-			m_iGruntHead = RANDOM_LONG(0, 1) + HGruntAllyHead::BandanaWhite;
-		}
-		else if (m_iWeaponIdx == HGruntAllyWeapon::None)
-		{
-			m_iGruntHead = HGruntAllyHead::MilitaryPolice;
-		}
-		else
-		{
-			m_iGruntHead = HGruntAllyHead::GasMask;
+			case 0:
+				m_iGruntHead = HGruntAllyHead::White;
+				break;
+			case 1:
+				m_iGruntHead = HGruntAllyHead::Black;
+				break;
+			case 2:
+				m_iGruntHead = HGruntAllyHead::ThermalVision;
+				break;
 		}
 	}
 
 	SetBodygroup(HGruntAllyBodygroup::Head, m_iGruntHead);
-	SetBodygroup(HGruntAllyBodygroup::Torso, m_iGruntTorso);
 	SetBodygroup(HGruntAllyBodygroup::Weapons, m_iWeaponIdx);
 
 	//TODO: probably also needs this for head HGruntAllyHead::BeretBlack
-	if (m_iGruntHead == HGruntAllyHead::OpsMask || m_iGruntHead == HGruntAllyHead::BandanaBlack)
+	if (m_iGruntHead == HGruntAllyHead::Black)
 		m_voicePitch = 90;
 
-	pev->skin = 0;
+	// pev->skin = 0;
 
 	m_iSawShell = PRECACHE_MODEL("models/saw_shell.mdl");
 	m_iSawLink = PRECACHE_MODEL("models/saw_link.mdl");
@@ -1260,8 +1223,12 @@ void CHGruntAlly::Precache()
 
 	TalkInit();
 
-	PRECACHE_SOUND("hgrunt/gr_mgun1.wav");
-	PRECACHE_SOUND("hgrunt/gr_mgun2.wav");
+	PRECACHE_SOUND("weapons/hks1.wav");
+	PRECACHE_SOUND("weapons/hks2.wav");
+	PRECACHE_SOUND("weapons/hks3.wav");
+	PRECACHE_SOUND("weapons/m41.wav");
+	PRECACHE_SOUND("weapons/m42.wav");
+	PRECACHE_SOUND("weapons/m43.wav");
 
 	PRECACHE_SOUND("fgrunt/death1.wav");
 	PRECACHE_SOUND("fgrunt/death2.wav");
@@ -1278,11 +1245,6 @@ void CHGruntAlly::Precache()
 	PRECACHE_SOUND("fgrunt/pain6.wav");
 
 	PRECACHE_SOUND("hgrunt/gr_reload1.wav");
-
-	// PRECACHE_SOUND("weapons/saw_fire1.wav");
-	// PRECACHE_SOUND("weapons/saw_fire2.wav");
-	// PRECACHE_SOUND("weapons/saw_fire3.wav");
-	// PRECACHE_SOUND("weapons/saw_reload.wav");
 
 	PRECACHE_SOUND("weapons/sniper_fire");
 	PRECACHE_SOUND("weapons/sniper_reload_first_seq");
@@ -2140,7 +2102,20 @@ void CHGruntAlly::SetActivity(Activity NewActivity)
 	{
 	case ACT_RANGE_ATTACK1:
 		// grunt is either shooting standing or shooting crouched
-		if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::MP5))
+		if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::SniperRifle))
+		{
+			if (m_fStanding)
+			{
+				// get aimable sequence
+				iSequence = LookupSequence("standing_shotgun");
+			}
+			else
+			{
+				// get crouching shoot
+				iSequence = LookupSequence("crouching_shotgun");
+			}
+		}
+		else
 		{
 			if (m_fStanding)
 			{
@@ -2151,34 +2126,6 @@ void CHGruntAlly::SetActivity(Activity NewActivity)
 			{
 				// get crouching shoot
 				iSequence = LookupSequence("crouching_mp5");
-			}
-		}
-		else if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::Saw))
-		{
-			if (m_fStanding)
-			{
-				// get aimable sequence
-				// iSequence = LookupSequence("standing_saw");
-				iSequence = LookupSequence("standing_shotgun");
-			}
-			else
-			{
-				// get crouching shoot
-				// iSequence = LookupSequence("crouching_saw");
-				iSequence = LookupSequence("crouching_shotgun");
-			}
-		}
-		else
-		{
-			if (m_fStanding)
-			{
-				// get aimable sequence
-				iSequence = LookupSequence("standing_shotgun");
-			}
-			else
-			{
-				// get crouching shoot
-				iSequence = LookupSequence("crouching_shotgun");
 			}
 		}
 		break;
@@ -2372,6 +2319,7 @@ Schedule_t* CHGruntAlly::GetSchedule()
 						else if ((m_hEnemy != NULL) &&
 								 (m_hEnemy->Classify() != CLASS_PLAYER_ALLY) &&
 								 (m_hEnemy->Classify() != CLASS_HUMAN_PASSIVE) &&
+								 (m_hEnemy->Classify() != CLASS_HUMAN_MILITARY_FRIENDLY) &&
 								 (m_hEnemy->Classify() != CLASS_MACHINE))
 							// monster
 							SENTENCEG_PlayRndSz(ENT(pev), "FG_MONST", HGRUNT_SENTENCE_VOLUME, GRUNT_ATTN, 0, m_voicePitch);
@@ -2659,13 +2607,6 @@ Schedule_t* CHGruntAlly::GetScheduleOfType(int Type)
 	break;
 	case SCHED_RANGE_ATTACK1:
 	{
-		//Always stand when using Saw
-		if ((pev->weapons & HGruntAllyWeaponFlag::Saw) != 0)
-		{
-			m_fStanding = true;
-			return &slGruntAllyRangeAttack1B[0];
-		}
-
 		// randomly stand or crouch
 		if (RANDOM_LONG(0, 9) == 0)
 			m_fStanding = RANDOM_LONG(0, 1);
@@ -2832,7 +2773,7 @@ void CHGruntAlly::DeclineFollowing()
 	PlaySentence("FG_POK", 2, VOL_NORM, ATTN_NORM);
 }
 
-void CHGruntAlly::ShootSaw()
+void CHGruntAlly::ShootSniperRifle()
 {
 	if (m_hEnemy == NULL)
 	{
@@ -2843,40 +2784,11 @@ void CHGruntAlly::ShootSaw()
 	Vector vecShootDir = ShootAtEnemy(vecShootOrigin);
 
 	UTIL_MakeVectors(pev->angles);
-
-	/*switch (RANDOM_LONG(0, 1))
-	{
-	case 0:
-	{
-		auto vecShellVelocity = gpGlobals->v_right * RANDOM_FLOAT(75, 200) + gpGlobals->v_up * RANDOM_FLOAT(150, 200) + gpGlobals->v_forward * 25.0;
-		EjectBrass(vecShootOrigin - vecShootDir * 6, vecShellVelocity, pev->angles.y, m_iSawLink, TE_BOUNCE_SHELL);
-		break;
-	}
-
-	case 1:
-	{
-		auto vecShellVelocity = gpGlobals->v_right * RANDOM_FLOAT(100, 250) + gpGlobals->v_up * RANDOM_FLOAT(100, 150) + gpGlobals->v_forward * 25.0;
-		EjectBrass(vecShootOrigin - vecShootDir * 6, vecShellVelocity, pev->angles.y, m_iSawShell, TE_BOUNCE_SHELL);
-		break;
-	}
-	}*/
 	
 	Vector vecShellVelocity = gpGlobals->v_right * RANDOM_FLOAT(40, 90) + gpGlobals->v_up * RANDOM_FLOAT(75, 200) + gpGlobals->v_forward * RANDOM_FLOAT(-40, 40);
 	EjectBrass(vecShootOrigin - vecShootDir * 24, vecShellVelocity, pev->angles.y, m_iBrassShell, TE_BOUNCE_SHELL);
 	FireBullets(1, vecShootOrigin, vecShootDir, VECTOR_CONE_5DEGREES, 8192, BULLET_PLAYER_556, 2); // shoot +-5 degrees
 
-	/*switch (RANDOM_LONG(0, 2))
-	{
-	case 0:
-		EMIT_SOUND_DYN(edict(), CHAN_WEAPON, "weapons/saw_fire1.wav", VOL_NORM, ATTN_NORM, 0, RANDOM_LONG(0, 15) + 94);
-		break;
-	case 1:
-		EMIT_SOUND_DYN(edict(), CHAN_WEAPON, "weapons/saw_fire2.wav", VOL_NORM, ATTN_NORM, 0, RANDOM_LONG(0, 15) + 94);
-		break;
-	case 2:
-		EMIT_SOUND_DYN(edict(), CHAN_WEAPON, "weapons/saw_fire3.wav", VOL_NORM, ATTN_NORM, 0, RANDOM_LONG(0, 15) + 94);
-		break;
-	}*/
 	EMIT_SOUND_DYN(edict(), CHAN_WEAPON, "weapons/sniper_fire.wav", VOL_NORM, ATTN_NORM, 0, RANDOM_LONG(0, 15) + 94);
 
 	pev->effects |= EF_MUZZLEFLASH;
@@ -2885,7 +2797,6 @@ void CHGruntAlly::ShootSaw()
 
 	Vector angDir = UTIL_VecToAngles(vecShootDir);
 	SetBlending(0, angDir.x);
-	// m_flLastShot = gpGlobals->time;
 }
 
 bool CHGruntAlly::KeyValue(KeyValueData* pkvd)
@@ -3102,22 +3013,18 @@ void CDeadHGruntAlly::Spawn()
 
 	if ((pev->weapons & HGruntAllyWeaponFlag::MP5) != 0)
 	{
-		SetBodygroup(HGruntAllyBodygroup::Torso, HGruntAllyTorso::Normal);
 		SetBodygroup(HGruntAllyBodygroup::Weapons, HGruntAllyWeapon::MP5);
 	}
-	else if ((pev->weapons & HGruntAllyWeaponFlag::Shotgun) != 0)
+	else if ((pev->weapons & HGruntAllyWeaponFlag::SniperRifle) != 0)
 	{
-		SetBodygroup(HGruntAllyBodygroup::Torso, HGruntAllyTorso::Shotgun);
-		SetBodygroup(HGruntAllyBodygroup::Weapons, HGruntAllyWeapon::Shotgun);
+		SetBodygroup(HGruntAllyBodygroup::Weapons, HGruntAllyWeapon::SniperRifle);
 	}
-	else if ((pev->weapons & HGruntAllyWeaponFlag::Saw) != 0)
+	else if ((pev->weapons & HGruntAllyWeaponFlag::GrenadeLauncher) != 0)
 	{
-		SetBodygroup(HGruntAllyBodygroup::Torso, HGruntAllyTorso::Saw);
-		SetBodygroup(HGruntAllyBodygroup::Weapons, HGruntAllyWeapon::Saw);
+		SetBodygroup(HGruntAllyBodygroup::Weapons, HGruntAllyWeapon::M4);
 	}
 	else
 	{
-		SetBodygroup(HGruntAllyBodygroup::Torso, HGruntAllyTorso::Normal);
 		SetBodygroup(HGruntAllyBodygroup::Weapons, HGruntAllyWeapon::None);
 	}
 
