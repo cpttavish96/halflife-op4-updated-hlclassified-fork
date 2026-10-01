@@ -3085,9 +3085,8 @@
   [
     1 : "9mmAR"
     3 : "9mmAR + HG"
-    5 : "9mmAR + GL"
+    4 : "M4 + GL"
     8 : "SniperRifle"
-    16 : "M4"
   ]
   head(Choices) : "Head" : -1 =
   [

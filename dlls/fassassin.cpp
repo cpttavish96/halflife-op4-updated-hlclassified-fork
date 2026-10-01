@@ -412,35 +412,35 @@ void CFAssassin::HandleAnimEvent(MonsterEvent_t* pEvent)
 		SetBlending(0, angDir.x);
 	}
 	break;
-	case FASSASSIN_AE_SHOOT_HEALING_DART:
-	{
-		Vector vecOrigin = GetGunPosition();
-		Vector vecDir = gpGlobals->v_forward;
-		if (m_pHealTarget)
-		{
-			MakeIdealYaw(m_pHealTarget->pev->origin);
-			ChangeYaw(pev->yaw_speed);
-			vecDir = ((m_pHealTarget->BodyTarget(vecOrigin) - m_pHealTarget->pev->origin) + m_pHealTarget->pev->origin - vecOrigin).Normalize();
-		}
+	// case FASSASSIN_AE_SHOOT_HEALING_DART:
+	// {
+		// Vector vecOrigin = GetGunPosition();
+		// Vector vecDir = gpGlobals->v_forward;
+		// if (m_pHealTarget)
+		// {
+		// 	MakeIdealYaw(m_pHealTarget->pev->origin);
+		// 	ChangeYaw(pev->yaw_speed);
+		// 	vecDir = ((m_pHealTarget->BodyTarget(vecOrigin) - m_pHealTarget->pev->origin) + m_pHealTarget->pev->origin - vecOrigin).Normalize();
+		// }
 
-		CHealingDart* pDart = CHealingDart::DartCreate();
-		pDart->pev->origin = vecOrigin;
-		pDart->pev->angles = UTIL_VecToAngles(vecDir);
-		pDart->pev->owner = edict();
-		pDart->pev->velocity = vecDir * 2048.0f;
-		pDart->pev->speed = 2048.0f;
-		pDart->pev->avelocity.z = 10.0f;
+		// CHealingDart* pDart = CHealingDart::DartCreate();
+		// pDart->pev->origin = vecOrigin;
+		// pDart->pev->angles = UTIL_VecToAngles(vecDir);
+		// pDart->pev->owner = edict();
+		// pDart->pev->velocity = vecDir * 2048.0f;
+		// pDart->pev->speed = 2048.0f;
+		// pDart->pev->avelocity.z = 10.0f;
 
-		EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "items/smallmedkit1.wav", VOL_NORM, ATTN_NORM, 0, 150);
+		// EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "items/smallmedkit1.wav", VOL_NORM, ATTN_NORM, 0, 150);
 
-		pev->effects |= EF_MUZZLEFLASH;
+		// pev->effects |= EF_MUZZLEFLASH;
 
-		Vector angDir = UTIL_VecToAngles(vecDir);
-		SetBlending(0, angDir.x);
-		m_flLastHealTime = gpGlobals->time + 10.0f;
-		m_pHealTarget = nullptr;
-	}
-	break;
+		// Vector angDir = UTIL_VecToAngles(vecDir);
+		// SetBlending(0, angDir.x);
+		// m_flLastHealTime = gpGlobals->time + 10.0f;
+		// m_pHealTarget = nullptr;
+	// }
+	// break;
 	default:
 		CTalkMonster::HandleAnimEvent(pEvent);
 	}

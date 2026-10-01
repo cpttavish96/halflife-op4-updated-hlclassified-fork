@@ -1012,11 +1012,15 @@ void CHGruntAlly::HandleAnimEvent(MonsterEvent_t* pEvent)
 		else if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::GrenadeLauncher))
 		{
 			DropItem("weapon_m4", vecGunPos, vecGunAngles);
-			DropItem("ammo_ARgrenades", BodyTarget(pev->origin), vecGunAngles);
+			DropItem("ammo_ARgrenades", vecGunPos, vecGunAngles);
 		}
 		else
 		{
 			DropItem("weapon_9mmAR", vecGunPos, vecGunAngles);
+		}
+		if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::HandGrenade))
+		{
+			DropItem("weapon_handgrenade", vecGunPos, vecGunAngles);
 		}
 
 		m_iWeaponIdx = HGruntAllyWeapon::None;
@@ -1087,10 +1091,6 @@ void CHGruntAlly::HandleAnimEvent(MonsterEvent_t* pEvent)
 		{
 			Shoot();
 		}
-		/*else if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::Saw))
-		{
-			ShootSaw();
-		}*/
 		break;
 
 	case HGRUNT_AE_KICK:

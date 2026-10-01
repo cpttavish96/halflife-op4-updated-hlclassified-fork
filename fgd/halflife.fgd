@@ -1912,7 +1912,7 @@
         0 : "None"
         1 : "9mmAR"
         3 : "9mmAR + HG"
-        5 : "9mmAR + GL (OBSOLETE! Use monster_human_grunt_elite instead!)"
+        4 : "M4 + GL"
         8 : "Shotgun"
         10 : "Shotgun + HG"
         16 : "Saw"
