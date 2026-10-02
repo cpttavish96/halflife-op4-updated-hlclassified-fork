@@ -1172,7 +1172,6 @@ void CHGrunt::Spawn()
 void CHGrunt::Precache()
 {
 	PRECACHE_MODEL("models/hgrunt_opfor.mdl");
-	PRECACHE_MODEL("models/hgrunt_opfor_hd.mdl");
 	PRECACHE_MODEL("models/hgrunt_medic.mdl");
 	PRECACHE_MODEL("models/hgrunt_torch.mdl");
 

@@ -101,10 +101,10 @@ static void V_UpdateLazyViewmodelSpring(float *targetAngles,float frameTime)
     if (dt > 0.05f)
         dt = 0.05f;
 
-    springFrequency = 32.0f;
+    springFrequency = CVAR_GET_FLOAT("v_viewmodel_lag_freq");
 
     stiffness = springFrequency * springFrequency;
-    damping = 2.75f * springFrequency;
+    damping = CVAR_GET_FLOAT("v_viewmodel_lag_damping") * springFrequency;
 
     for (i = 0; i < 3; i++)
     {
@@ -172,6 +172,9 @@ cvar_t v_ipitch_cycle = {"v_ipitch_cycle", "1", 0, 1};
 cvar_t v_iyaw_level = {"v_iyaw_level", "0.3", 0, 0.3};
 cvar_t v_iroll_level = {"v_iroll_level", "0.1", 0, 0.1};
 cvar_t v_ipitch_level = {"v_ipitch_level", "0.3", 0, 0.3};
+cvar_t v_viewmodel_lag_enable = {"v_viewmodel_lag_enable", "1", 0, 1};
+cvar_t v_viewmodel_lag_freq = {"v_viewmodel_lag_freq", "32.0", 0, 32.0};
+cvar_t v_viewmodel_lag_damping = {"v_viewmodel_lag_damping", "2.75", 0, 2.75};
 
 float v_idlescale; // used by TFC for concussion grenade effect
 
@@ -444,115 +447,61 @@ V_CalcGunAngle
 */
 void V_CalcGunAngle(struct ref_params_s* pparams)
 {
-	cl_entity_t *viewent;
+	cl_entity_t *viewent = gEngfuncs.GetViewModel();
 
-    float targetAngles[3];
-    float frameTime;
-    int modelIndex;
+	if ( !viewent )
+	{
+		g_LazyViewmodelInitialized = 0;
+		g_LazyViewmodelModelIndex = -1;
 
-    viewent = gEngfuncs.GetViewModel();
+		return;
+	}
 
-    if ( !viewent )
-    {
-        /*
-         * The viewmodel can disappear during death, spectator mode,
-         * level changes, or transitions between weapons.
-         */
-        g_LazyViewmodelInitialized = 0;
-        g_LazyViewmodelModelIndex = -1;
+	if (!CVAR_GET_FLOAT("v_viewmodel_lag_enable"))
+	{
+		viewent->angles[YAW] = pparams->viewangles[YAW] + pparams->crosshairangle[YAW];
+		viewent->angles[PITCH] = -pparams->viewangles[PITCH] + pparams->crosshairangle[PITCH] * 0.25;
+		viewent->angles[ROLL] -= v_idlescale * sin(pparams->time * v_iroll_cycle.value) * v_iroll_level.value;
 
-        return;
-    }
+		// don't apply all of the v_ipitch to prevent normally unseen parts of viewmodel from coming into view.
+		viewent->angles[PITCH] -= v_idlescale * sin(pparams->time * v_ipitch_cycle.value) * (v_ipitch_level.value * 0.5);
+		viewent->angles[YAW] -= v_idlescale * sin(pparams->time * v_iyaw_cycle.value) * v_iyaw_level.value;	
+	}
+	else
+	{
+		float targetAngles[3];
+		float frameTime;
+		int modelIndex;
 
-    /*
-     * Calculate the desired viewmodel orientation.
+		targetAngles[YAW] = pparams->viewangles[YAW] + pparams->crosshairangle[YAW];
+		targetAngles[PITCH] = -pparams->viewangles[PITCH] + pparams->crosshairangle[PITCH] * 0.25f;
+		targetAngles[ROLL] = -v_idlescale * sin(pparams->time * v_iroll_cycle.value) * v_iroll_level.value;
 
-     * GoldSrc uses an inverted pitch for the weapon viewmodel.
-     */
-    targetAngles[YAW] =
-        pparams->viewangles[YAW] +
-        pparams->crosshairangle[YAW];
+		targetAngles[PITCH] -= v_idlescale * sin(pparams->time * v_ipitch_cycle.value) * (v_ipitch_level.value * 0.5f);
+		targetAngles[YAW] -= v_idlescale * sin(pparams->time * v_iyaw_cycle.value) * v_iyaw_level.value;
 
-    targetAngles[PITCH] =
-        -pparams->viewangles[PITCH] +
-        pparams->crosshairangle[PITCH] * 0.25f;
+		modelIndex = viewent->curstate.modelindex;
 
-    /*
-     * The original code modifies viewent->angles[ROLL] directly.
-     * For the spring implementation, use zero as the base roll and
-     * calculate the idle roll as part of the target orientation.
-     */
-    targetAngles[ROLL] =
-        -v_idlescale *
-        sin(pparams->time * v_iroll_cycle.value) *
-        v_iroll_level.value;
+		if ( !g_LazyViewmodelInitialized || modelIndex != g_LazyViewmodelModelIndex )
+		{
+			V_ResetLazyViewmodel(targetAngles[PITCH], targetAngles[YAW], targetAngles[ROLL], modelIndex);
 
-    /*
-     * Preserve the original idle pitch effect.
+			viewent->angles[PITCH] = targetAngles[PITCH];
+			viewent->angles[YAW]   = targetAngles[YAW];
+			viewent->angles[ROLL]  = targetAngles[ROLL];
 
-     * The original source intentionally uses only half of the pitch
-     * idle amount so normally hidden parts of the model do not become
-     * visible.
-     */
-    targetAngles[PITCH] -=
-        v_idlescale *
-        sin(pparams->time * v_ipitch_cycle.value) *
-        (v_ipitch_level.value * 0.5f);
+			return;
+		}
 
-    /*
-     * Preserve the original idle yaw effect.
-     */
-    targetAngles[YAW] -=
-        v_idlescale *
-        sin(pparams->time * v_iyaw_cycle.value) *
-        v_iyaw_level.value;
+		frameTime = pparams->frametime;
 
-    /*
-     * Reset the spring on first use or when the weapon model changes.
-     */
-    modelIndex = viewent->curstate.modelindex;
+		V_UpdateLazyViewmodelSpring(targetAngles, frameTime);
 
-    if ( !g_LazyViewmodelInitialized ||
-         modelIndex != g_LazyViewmodelModelIndex )
-    {
-        V_ResetLazyViewmodel(
-            targetAngles[PITCH],
-            targetAngles[YAW],
-            targetAngles[ROLL],
-            modelIndex);
-
-        viewent->angles[PITCH] = targetAngles[PITCH];
-        viewent->angles[YAW]   = targetAngles[YAW];
-        viewent->angles[ROLL]  = targetAngles[ROLL];
-
-        return;
-    }
-
-    /*
-     * Use the frame time supplied by the engine.
-     */
-    frameTime = pparams->frametime;
-
-    /*
-     * Move the viewmodel orientation toward the target using the
-     * critically damped spring.
-     */
-    V_UpdateLazyViewmodelSpring(
-        targetAngles,
-        frameTime);
-
-    /*
-     * Copy the spring result to the actual viewmodel entity.
-     */
-    viewent->angles[PITCH] =
-        g_LazyViewmodelAngles[PITCH];
-
-    viewent->angles[YAW] =
-        g_LazyViewmodelAngles[YAW];
-
-    viewent->angles[ROLL] =
-        g_LazyViewmodelAngles[ROLL];
-
+		viewent->angles[PITCH] = g_LazyViewmodelAngles[PITCH];
+		viewent->angles[YAW] = g_LazyViewmodelAngles[YAW];
+		viewent->angles[ROLL] = g_LazyViewmodelAngles[ROLL];
+	}
+	
 	VectorCopy(viewent->angles, viewent->curstate.angles);
 	VectorCopy(viewent->angles, viewent->latched.prevangles);
 }
@@ -1877,6 +1826,10 @@ V_Init
 void V_Init()
 {
 	gEngfuncs.pfnAddCommand("centerview", V_StartPitchDrift);
+
+	gEngfuncs.pfnRegisterVariable("v_viewmodel_lag_enable", "1", 0);
+	gEngfuncs.pfnRegisterVariable("v_viewmodel_lag_freq", "36.0", 0);
+	gEngfuncs.pfnRegisterVariable("v_viewmodel_lag_damping", "2.75", 0);
 
 	scr_ofsx = gEngfuncs.pfnRegisterVariable("scr_ofsx", "0", 0);
 	scr_ofsy = gEngfuncs.pfnRegisterVariable("scr_ofsy", "0", 0);

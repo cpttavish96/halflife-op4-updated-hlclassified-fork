@@ -348,7 +348,7 @@ void CHGruntAlly::GibMonster()
 		{
 			pGun = DropItem("weapon_m4", vecGunPos, vecGunAngles);
 		}
-		else
+		else if(FBitSet(pev->weapons, HGruntAllyWeaponFlag::MP5))
 		{
 			pGun = DropItem("weapon_9mmAR", vecGunPos, vecGunAngles);
 		}
@@ -1014,7 +1014,7 @@ void CHGruntAlly::HandleAnimEvent(MonsterEvent_t* pEvent)
 			DropItem("weapon_m4", vecGunPos, vecGunAngles);
 			DropItem("ammo_ARgrenades", vecGunPos, vecGunAngles);
 		}
-		else
+		else if (FBitSet(pev->weapons, HGruntAllyWeaponFlag::MP5))
 		{
 			DropItem("weapon_9mmAR", vecGunPos, vecGunAngles);
 		}
