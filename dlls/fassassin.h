@@ -28,6 +28,7 @@
 
 constexpr int FASSASSIN_AE_SHOOT = 1;
 constexpr int FASSASSIN_AE_SHOOT_HEALING_DART = 2;
+constexpr float FASSASSIN_SENTENCE_VOLUME = 0.3f;
 
 class CFAssassin : public CTalkMonster
 {
@@ -51,6 +52,11 @@ public:
 	bool TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, float flDamage, int bitsDamageType) override;
 	void Killed(entvars_t* pevAttacker, int iGib) override;
 
+	void SpeakSentence();
+	bool FOkToSpeak();
+	void JustSpoke();
+	void IdleSound() override;
+
 	void AlertSound() override;
 	void DeathSound() override;
 	void PainSound() override;
@@ -58,6 +64,11 @@ public:
 	bool Save(CSave& save) override;
 	bool Restore(CRestore& restore) override;
 	static TYPEDESCRIPTION m_SaveData[];
+	static const char* pFAssassinSentences[];
+
+	int g_fAssassinAllyQuestion; // true if an idle grunt asked a question. Cleared when someone answers.
+	int m_iVoicePitch = 50;
+	int m_iSentence;
 
 	CUSTOM_SCHEDULES;
 

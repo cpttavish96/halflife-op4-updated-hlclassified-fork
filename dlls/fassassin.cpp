@@ -259,13 +259,62 @@ TYPEDESCRIPTION CFAssassin::m_SaveData[] =
 		DEFINE_FIELD(CFAssassin, m_flLastShot, FIELD_TIME),
 		DEFINE_FIELD(CFAssassin, m_flLastHealTime, FIELD_TIME),
 		DEFINE_FIELD(CFAssassin, m_flPainTime, FIELD_TIME),
+		DEFINE_FIELD(CFAssassin, m_iSentence, FIELD_INTEGER),
 };
 
 IMPLEMENT_SAVERESTORE(CFAssassin, CTalkMonster);
 
 LINK_ENTITY_TO_CLASS(monster_fassassin_ally, CFAssassin);
 
+const char* CFAssassin::pFAssassinSentences[] =
+{
+	"FA_GREN",	  // grenade scared grunt
+	"FA_ALERT",	  // sees player
+	"FA_MONSTER", // sees monster
+	"FA_COVER",	  // running to cover
+	"FA_THROW",	  // about to throw grenade
+	"FA_CHARGE",  // running out to get the enemy
+	"FA_TAUNT",	  // say rude things
+};
 
+enum
+{
+	FASSASSIN_SENT_NONE = -1,
+	FASSASSIN_SENT_GREN = 0,
+	FASSASSIN_SENT_ALERT,
+	FASSASSIN_SENT_MONSTER,
+	FASSASSIN_SENT_COVER,
+	FASSASSIN_SENT_THROW,
+	FASSASSIN_SENT_CHARGE,
+	FASSASSIN_SENT_TAUNT,
+} FASSASSIN_ALLY_SENTENCE_TYPES;
+
+//=========================================================
+// Speak Sentence - say your cued up sentence.
+//
+// Some grunt sentences (take cover and charge) rely on actually
+// being able to execute the intended action. It's really lame
+// when a grunt says 'COVER ME' and then doesn't move. The problem
+// is that the sentences were played when the decision to TRY
+// to move to cover was made. Now the sentence is played after
+// we know for sure that there is a valid path. The schedule
+// may still fail but in most cases, well after the grunt has
+// started moving.
+//=========================================================
+void CFAssassin::SpeakSentence()
+{
+	if (m_iSentence == FASSASSIN_SENT_NONE)
+	{
+		// no sentence cued up.
+		return;
+	}
+
+	if (FOkToSpeak())
+	{
+		SENTENCEG_PlayRndSz(ENT(pev), pFAssassinSentences[m_iSentence], VOL_NORM, ATTN_NORM, 0, m_iVoicePitch);
+		JustSpoke();
+	}
+}
 
 void CFAssassin::Spawn()
 {
@@ -276,6 +325,7 @@ void CFAssassin::Spawn()
 	pev->solid = SOLID_SLIDEBOX;
 	pev->movetype = MOVETYPE_STEP;
 	m_bloodColor = BLOOD_COLOR_RED;
+	m_iSentence = FASSASSIN_SENT_NONE;
 	pev->health = gSkillData.hassassinHealth;
 
 	m_flFieldOfView = VIEW_FIELD_WIDE;
@@ -290,8 +340,6 @@ void CFAssassin::Spawn()
 void CFAssassin::Precache()
 {
 	PRECACHE_MODEL("models/hassassin.mdl");
-	PRECACHE_SOUND("fassassin/fa_die1.wav");
-	PRECACHE_SOUND("fassassin/fa_pain1.wav");
 	PRECACHE_SOUND("weapons/pl_gun1.wav");
 	PRECACHE_SOUND("weapons/pl_gun2.wav");
 	
@@ -299,14 +347,14 @@ void CFAssassin::Precache()
 
 	CTalkMonster::TalkInit();
 	m_szGrp[TLK_ANSWER] = "FA_ANSWER";
-	m_szGrp[TLK_QUESTION] = "FA_QUESTION";
+	m_szGrp[TLK_QUESTION] = "FA_QUEST";
 	m_szGrp[TLK_IDLE] = "FA_IDLE";
 	m_szGrp[TLK_STARE] = "FA_STARE";
 	m_szGrp[TLK_USE] = "FA_OK";
 	m_szGrp[TLK_UNUSE] = "FA_WAIT";
 	m_szGrp[TLK_STOP] = "FA_STOP";
 
-	m_szGrp[TLK_NOSHOOT] = nullptr;
+	m_szGrp[TLK_NOSHOOT] = "FA_SCARED";
 	m_szGrp[TLK_HELLO] = "FA_HELLO";
 
 	m_szGrp[TLK_PLHURT1] = "!FA_CUREA";
@@ -321,7 +369,7 @@ void CFAssassin::Precache()
 
 	m_szGrp[TLK_WOUND] = "FA_WOUND";
 	m_szGrp[TLK_MORTAL] = "FA_MORTAL";
-	m_voicePitch = 150;
+	
 	CTalkMonster::Precache();
 }
 
@@ -350,8 +398,6 @@ void CFAssassin::SetYawSpeed()
 {
 	pev->yaw_speed = 360.0f;
 }
-
-
 
 bool CFAssassin::CheckRangeAttack1(float flDot, float flDist)
 {
@@ -416,11 +462,14 @@ void CFAssassin::HandleAnimEvent(MonsterEvent_t* pEvent)
 
 void CFAssassin::DeclineFollowing()
 {
-	PlaySentence("FA_POK", 2.0f, VOL_NORM, ATTN_NORM);
+	SENTENCEG_PlayRndSz(ENT(pev), "FA_POK", VOL_NORM, ATTN_NORM, 0, m_iVoicePitch);	
 }
 
 Schedule_t* CFAssassin::GetSchedule()
 {
+	// clear old sentence
+	m_iSentence = FASSASSIN_SENT_NONE;
+
 	if (HasConditions(bits_COND_HEAR_SOUND))
 	{
 		CSound* pSound = PBestSound();
@@ -556,38 +605,106 @@ bool CFAssassin::TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, flo
 	{
 		if ((m_afMemory & bits_MEMORY_SUSPICIOUS) != 0 || IsFacing(pevAttacker, pev->origin))
 		{
-			PlaySentence("FA_MAD", 4.0f, VOL_NORM, ATTN_NORM);
+			SENTENCEG_PlayRndSz(ENT(pev), "FA_MAD", VOL_NORM, ATTN_NORM, 0, m_iVoicePitch);		
 			Remember(bits_MEMORY_PROVOKED);
 			StopFollowing(true);
 		}
 		else
 		{
-			PlaySentence("FA_SHOT", 4.0f, VOL_NORM, ATTN_NORM);
+			SENTENCEG_PlayRndSz(ENT(pev), "FA_SHOT", VOL_NORM, ATTN_NORM, 0, m_iVoicePitch);		
 			Remember(bits_MEMORY_SUSPICIOUS);
 		}
 	}
 	else if (!(m_hEnemy->IsPlayer()) && pev->deadflag == DEAD_NO)
 	{
-		PlaySentence("FA_SHOT", 4.0f, VOL_NORM, ATTN_NORM);
+		SENTENCEG_PlayRndSz(ENT(pev), "FA_SHOT", VOL_NORM, ATTN_NORM, 0, m_iVoicePitch);	
 	}
 
 	return bReturn;
 }
 
+void CFAssassin::IdleSound()
+{
+	if (FOkToSpeak() && (0 != g_fAssassinAllyQuestion || RANDOM_LONG(0, 1)))
+	{
+		if (0 == g_fAssassinAllyQuestion)
+		{
+			// ask question or make statement
+			switch (RANDOM_LONG(0, 2))
+			{
+			case 0: // check in
+				SENTENCEG_PlayRndSz(ENT(pev), "FA_CHECK", VOL_NORM, ATTN_NORM, 0, m_iVoicePitch);
+				g_fAssassinAllyQuestion = 1;
+				break;
+			case 1: // question
+				SENTENCEG_PlayRndSz(ENT(pev), "FA_QUEST", VOL_NORM, ATTN_NORM, 0, m_iVoicePitch);
+				g_fAssassinAllyQuestion = 2;
+				break;
+			case 2: // statement
+				SENTENCEG_PlayRndSz(ENT(pev), "FA_IDLE", VOL_NORM, ATTN_NORM, 0, m_iVoicePitch);
+				break;
+			}
+		}
+		else
+		{
+			switch (g_fAssassinAllyQuestion)
+			{
+			case 1: // check in
+				SENTENCEG_PlayRndSz(ENT(pev), "FA_CLEAR", VOL_NORM, ATTN_NORM, 0, m_iVoicePitch);
+				break;
+			case 2: // question
+				SENTENCEG_PlayRndSz(ENT(pev), "FA_ANSWER", VOL_NORM, ATTN_NORM, 0, m_iVoicePitch);
+				break;
+			}
+			g_fAssassinAllyQuestion = 0;
+		}
+		JustSpoke();
+	}
+}
+
+void CFAssassin::JustSpoke()
+{
+	CTalkMonster::g_talkWaitTime = gpGlobals->time + RANDOM_FLOAT(1.5, 2.0);
+	m_iSentence = -1;
+}
+
+//=========================================================
+// someone else is talking - don't speak
+//=========================================================
+bool CFAssassin::FOkToSpeak()
+{
+	// if someone else is talking, don't speak
+	if (gpGlobals->time <= CTalkMonster::g_talkWaitTime)
+		return false;
+
+	if ((pev->spawnflags & SF_MONSTER_GAG) != 0)
+	{
+		if (m_MonsterState != MONSTERSTATE_COMBAT)
+		{
+			// no talking outside of combat if gagged.
+			return false;
+		}
+	}
+
+	// if player is not in pvs, don't speak
+	//	if (FNullEnt(FIND_CLIENT_IN_PVS(edict())))
+	//		return false;
+
+	return true;
+}
 
 
 void CFAssassin::AlertSound()
 {
-	if (m_hEnemy == nullptr || !FOkToSpeak())
-		return;
-
-	PlaySentence("FA_ATTACK", RANDOM_FLOAT(2.8f, 3.2f), VOL_NORM, ATTN_IDLE);
+	if (m_hEnemy && FOkToSpeak())
+	{
+		SENTENCEG_PlayRndSz(ENT(pev), "FA_ATTACK", FASSASSIN_SENTENCE_VOLUME, ATTN_NORM, 0, m_iVoicePitch);
+	}
 }
 
 void CFAssassin::DeathSound()
 {
-	// EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "fassassin/fa_die1.wav", VOL_NORM, ATTN_NORM, 0, GetVoicePitch());
-	PlaySentence("FA_MORTAL", RANDOM_FLOAT(2.8f, 3.2f), VOL_NORM, ATTN_IDLE);
+	SENTENCEG_PlayRndSz(ENT(pev), "FA_MORTAL", FASSASSIN_SENTENCE_VOLUME, ATTN_NORM, 0, m_iVoicePitch);
 }
 
 void CFAssassin::PainSound()
@@ -596,9 +713,8 @@ void CFAssassin::PainSound()
 		return;
 
 	m_flPainTime = gpGlobals->time + RANDOM_FLOAT(0.5f, 0.75f);
-
-	PlaySentence("FA_WOUND", RANDOM_FLOAT(2.8f, 3.2f), VOL_NORM, ATTN_IDLE);
-	//EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "fassassin/fa_pain1.wav", VOL_NORM, ATTN_NORM, 0, GetVoicePitch());
+	
+	SENTENCEG_PlayRndSz(ENT(pev), "FA_WOUND", FASSASSIN_SENTENCE_VOLUME, ATTN_NORM, 0, m_iVoicePitch);
 }
 
 //=========================================================
@@ -637,27 +753,27 @@ bool CDeadCFAssassin::KeyValue(KeyValueData* pkvd)
 
 LINK_ENTITY_TO_CLASS(monster_fassassin_ally_dead, CDeadCFAssassin);
 
-namespace HGruntAllyWeaponFlag
+namespace FAssassinAllyWeaponFlag
 {
-enum HGruntAllyWeaponFlag
+enum FAssassinAllyWeaponFlag
 {
 	PISTOL = 1 << 0,
 	None = 1 << 1
 };
 }
 
-namespace HGruntAllyBodygroup
+namespace FAssassinAllyBodygroup
 {
-enum HGruntAllyBodygroup
+enum FAssassinAllyBodygroup
 {
 	Head = 1,
 	Weapons = 2
 };
 }
 
-namespace HGruntAllyWeapon
+namespace FAssassinAllyWeapon
 {
-enum HGruntAllyWeapon
+enum FAssassinAllyWeapon
 {
 	PISTOL = 0,
 	None
@@ -666,12 +782,12 @@ enum HGruntAllyWeapon
 
 
 //=========================================================
-// ********** DeadHGrunt SPAWN **********
+// ********** DeadFAssassin SPAWN **********
 //=========================================================
 void CDeadCFAssassin::Spawn()
 {
-	PRECACHE_MODEL("models/fassassin.mdl");
-	SET_MODEL(ENT(pev), "models/fassassin.mdl");
+	PRECACHE_MODEL("models/hassassin.mdl");
+	SET_MODEL(ENT(pev), "models/hassassin.mdl");
 
 	pev->effects = 0;
 	pev->yaw_speed = 8;
@@ -689,13 +805,13 @@ void CDeadCFAssassin::Spawn()
 	// Corpses have less health
 	pev->health = 8;
 
-	if ((pev->weapons & HGruntAllyWeaponFlag::PISTOL) != 0)
+	if ((pev->weapons & FAssassinAllyWeaponFlag::PISTOL) != 0)
 	{
-		SetBodygroup(HGruntAllyBodygroup::Weapons, HGruntAllyWeapon::PISTOL);
+		SetBodygroup(FAssassinAllyBodygroup::Weapons, FAssassinAllyWeapon::PISTOL);
 	}
 	else
 	{
-		SetBodygroup(HGruntAllyBodygroup::Weapons, HGruntAllyWeapon::None);
+		SetBodygroup(FAssassinAllyBodygroup::Weapons, FAssassinAllyWeapon::None);
 	}
 
 	pev->skin = 0;
