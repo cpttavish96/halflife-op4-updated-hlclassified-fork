@@ -172,7 +172,7 @@ cvar_t v_ipitch_cycle = {"v_ipitch_cycle", "1", 0, 1};
 cvar_t v_iyaw_level = {"v_iyaw_level", "0.3", 0, 0.3};
 cvar_t v_iroll_level = {"v_iroll_level", "0.1", 0, 0.1};
 cvar_t v_ipitch_level = {"v_ipitch_level", "0.3", 0, 0.3};
-cvar_t v_viewmodel_lag_enable = {"v_viewmodel_lag_enable", "1", 0, 1};
+cvar_t v_viewmodel_lag_enable = {"v_viewmodel_lag_enable", "0", 0, 1};
 cvar_t v_viewmodel_lag_freq = {"v_viewmodel_lag_freq", "32.0", 0, 32.0};
 cvar_t v_viewmodel_lag_damping = {"v_viewmodel_lag_damping", "2.75", 0, 2.75};
 
@@ -1827,7 +1827,7 @@ void V_Init()
 {
 	gEngfuncs.pfnAddCommand("centerview", V_StartPitchDrift);
 
-	gEngfuncs.pfnRegisterVariable("v_viewmodel_lag_enable", "1", 0);
+	gEngfuncs.pfnRegisterVariable("v_viewmodel_lag_enable", "0", 0);
 	gEngfuncs.pfnRegisterVariable("v_viewmodel_lag_freq", "36.0", 0);
 	gEngfuncs.pfnRegisterVariable("v_viewmodel_lag_damping", "2.75", 0);
 
