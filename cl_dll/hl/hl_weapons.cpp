@@ -55,6 +55,9 @@ static globalvars_t Globals;
 
 static CBasePlayerWeapon* g_pWpns[MAX_WEAPONS];
 
+extern bool g_bGlockAkimbo;
+extern int g_iGlockClipLeft;
+
 float g_flApplyVel = 0.0;
 bool g_irunninggausspred = false;
 
@@ -947,6 +950,10 @@ void HUD_WeaponsPostThink(local_state_s* from, local_state_s* to, usercmd_t* cmd
 			pto->fuser1 = -0.001;
 		}
 	}
+
+	// Expose akimbo glock state to the HUD
+	g_bGlockAkimbo = to->weapondata[WEAPON_GLOCK].iuser1 != 0;
+	g_iGlockClipLeft = to->weapondata[WEAPON_GLOCK].iuser2;
 
 	// m_flNextAttack is now part of the weapons, but is part of the player instead
 	to->client.m_flNextAttack -= cmd->msec / 1000.0;
