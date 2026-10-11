@@ -28,6 +28,10 @@
 
 #include "ammohistory.h"
 #include "vgui_TeamFortressViewport.h"
+#include "cdll_dll.h"
+
+bool g_bGlockAkimbo = false;
+int g_iGlockClipLeft = 0;
 
 WEAPON* gpActiveSel; // NULL means off, 1 means just the menu bar, otherwise
 					 // this points to the active weapon menu item
@@ -896,6 +900,13 @@ bool CHudAmmo::Draw(float flTime)
 			// room for the number and the '|' and the current ammo
 
 			x = ScreenWidth - (8 * AmmoWidth) - iIconWidth;
+
+			// Left-hand glock clip: a copy of the clip number, one blank digit to its left
+			if (pw->iId == WEAPON_GLOCK && g_bGlockAkimbo)
+			{
+				gHUD.DrawHudNumber(x - 4 * AmmoWidth, y, iFlags | DHN_3DIGITS, g_iGlockClipLeft, r, g, b);
+			}
+
 			x = gHUD.DrawHudNumber(x, y, iFlags | DHN_3DIGITS, pw->iClip, r, g, b);
 
 			Rect rc;

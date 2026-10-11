@@ -582,6 +582,9 @@ public:
 	int iItemSlot() override { return 2; }
 	bool GetItemInfo(ItemInfo* p) override;
 
+	void GetWeaponData(weapon_data_t& data) override;
+	void SetWeaponData(const weapon_data_t& data) override;
+
 	void IncrementAmmo(CBasePlayer* pPlayer) override;
 
 	void PrimaryAttack() override;
