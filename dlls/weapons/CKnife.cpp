@@ -177,7 +177,7 @@ void CKnife::BigSwing()
 	{
 		// miss
 		m_flNextPrimaryAttack = GetNextAttackDelay(1.0);
-		m_flNextSecondaryAttack = GetNextAttackDelay(1.0);
+		m_flNextSecondaryAttack = GetNextAttackDelay(0.25);
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
 
 		SendWeaponAnim(KNIFE_STAB);
@@ -201,7 +201,7 @@ void CKnife::BigSwing()
 		{
 			ClearMultiDamage();
 
-			float flDamage = (gpGlobals->time - m_flBigSwingStart) * gSkillData.plrDmgPipewrench + 25.0f;
+			float flDamage = (gpGlobals->time - m_flBigSwingStart) * gSkillData.plrDmgKnife + 25.0f;
 			if ((m_flNextPrimaryAttack + 1 < UTIL_WeaponTimeBase()) || g_pGameRules->IsMultiplayer())
 			{
 				// first swing does full damage
@@ -271,7 +271,7 @@ void CKnife::BigSwing()
 		SetNextThink( UTIL_WeaponTimeBase() + 0.2 );*/
 #endif
 		m_flNextPrimaryAttack = GetNextAttackDelay(1.0);
-		m_flNextSecondaryAttack = GetNextAttackDelay(1.0);
+		m_flNextSecondaryAttack = GetNextAttackDelay(0.5);
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
 	}
 }
@@ -325,7 +325,7 @@ void CKnife::SecondaryAttack()
 	if (m_iSwingMode != STAB_START)
 	{
 		SendWeaponAnim(KNIFE_CHARGE);
-		m_flBigSwingStart = 0.0f; // gpGlobals->time / 2.5;
+		m_flBigSwingStart = gpGlobals->time / 1.25;
 	}
 
 	m_iSwingMode = STAB_START;

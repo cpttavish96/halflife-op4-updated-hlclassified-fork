@@ -194,7 +194,7 @@ void CGlock::SecondaryAttack()
 
 	if (!m_bIsAkimbo)
 	{
-		if (0 != m_iClip && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > GLOCK_MAX_CLIP)
+		if (m_iClip + m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= ELITE_MAX_CLIP)
 		{
 			Holster();
 			UpdateVModel();
