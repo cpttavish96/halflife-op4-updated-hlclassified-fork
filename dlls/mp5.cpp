@@ -65,6 +65,7 @@ void CMP5::Precache()
 	PRECACHE_SOUND("weapons/hks3.wav");
 
 	PRECACHE_SOUND("weapons/357_cock1.wav");
+	m_usMP5 = PRECACHE_EVENT(1, "events/mp5.sc");
 }
 
 bool CMP5::GetItemInfo(ItemInfo* p)
@@ -100,7 +101,6 @@ bool CMP5::Deploy()
 
 void CMP5::PrimaryAttack()
 {
-	// M4Fire(0.001, 0.11, true);
 	Mp5Fire(0.045, 0.1, true);
 }
 
@@ -121,14 +121,6 @@ void CMP5::Mp5Fire(float flSpread, float flCycleTime, bool fUseAutoAim)
 	m_iClip--;
 
 	m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
-
-	int flags;
-
-#if defined(CLIENT_WEAPONS)
-	flags = UTIL_DefaultPlaybackFlags();
-#else
-	flags = 0;
-#endif
 
 	// player "shoot" animation
 	m_pPlayer->SetAnimation(PLAYER_ATTACK1);
@@ -151,53 +143,44 @@ void CMP5::Mp5Fire(float flSpread, float flCycleTime, bool fUseAutoAim)
 		break;
 	}
 
-	// Eject the brass
-	Vector vecShellVelocity = m_pPlayer->pev->velocity + gpGlobals->v_right * RANDOM_FLOAT(100, 200) +
-							  gpGlobals->v_up * RANDOM_FLOAT(100, 150) + gpGlobals->v_forward * 25;
-	EjectBrass(pev->origin + m_pPlayer->pev->view_ofs + gpGlobals->v_up * -12 + gpGlobals->v_forward * 20 +
-				   gpGlobals->v_right * 8,
-		vecShellVelocity, pev->angles.y, m_iShell, TE_BOUNCE_SHELL);
-
 	Vector vecSrc = m_pPlayer->GetGunPosition();
-	Vector vecAiming;
+	Vector vecAiming = m_pPlayer->GetAutoaimVector(AUTOAIM_10DEGREES);
+	Vector vecDir;
 
-	if (fUseAutoAim)
+#ifdef CLIENT_DLL
+	if (bIsMultiplayer())
+#else
+	if (g_pGameRules->IsMultiplayer())
+#endif
 	{
-		vecAiming = m_pPlayer->GetAutoaimVector(AUTOAIM_10DEGREES);
+		// optimized multiplayer. Widened to make it easier to hit a moving player
+		vecDir = m_pPlayer->FireBulletsPlayer(1, vecSrc, vecAiming, VECTOR_CONE_6DEGREES, 8192, BULLET_PLAYER_MP5, 2, 0, m_pPlayer->pev, m_pPlayer->random_seed);
 	}
 	else
 	{
-		vecAiming = gpGlobals->v_forward;
+		// single player spread
+		vecDir = m_pPlayer->FireBulletsPlayer(1, vecSrc, vecAiming, VECTOR_CONE_3DEGREES, 8192, BULLET_PLAYER_MP5, 2, 0, m_pPlayer->pev, m_pPlayer->random_seed);
 	}
 
-	Vector vecDir;
-	vecDir = m_pPlayer->FireBulletsPlayer(1, vecSrc, vecAiming, Vector(flSpread, flSpread, flSpread), 8192, BULLET_PLAYER_MP5, 2, 0, m_pPlayer->pev, m_pPlayer->random_seed);
+	int flags;
+#if defined(CLIENT_WEAPONS)
+	flags = UTIL_DefaultPlaybackFlags();
+#else
+	flags = 0;
+#endif
 
-	m_flNextPrimaryAttack = m_flNextSecondaryAttack = GetNextAttackDelay(flCycleTime);
+	PLAYBACK_EVENT_FULL(flags, m_pPlayer->edict(), m_usMP5, 0.0, g_vecZero, g_vecZero, vecDir.x, vecDir.y, 0, 0, 0, 0);
 
 	if (0 == m_iClip && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
 		// HEV suit - indicate out of ammo condition
 		m_pPlayer->SetSuitUpdate("!HEV_AMO0", false, 0);
+	
+	m_flNextPrimaryAttack = m_flNextSecondaryAttack = GetNextAttackDelay(flCycleTime);
+
+	if (m_flNextPrimaryAttack < UTIL_WeaponTimeBase())
+		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.1;
 
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat(m_pPlayer->random_seed, 10, 15);
-
-	// Play view model animation and firing sound
-	switch (RANDOM_LONG(0, 2))
-	{
-	case 0:
-		SendWeaponAnim(MP5_FIRE1);
-		break;
-	default:
-	case 1:
-		SendWeaponAnim(MP5_FIRE2);
-		break;
-	case 2:
-		SendWeaponAnim(MP5_FIRE3);
-		break;
-	}
-
-	// Punch the camera to simulate recoil
-	m_pPlayer->pev->punchangle.x -= 1.45;
 }
 
 void CMP5::SecondaryAttack()
