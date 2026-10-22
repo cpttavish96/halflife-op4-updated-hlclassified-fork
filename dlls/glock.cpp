@@ -23,6 +23,18 @@
 LINK_ENTITY_TO_CLASS(weapon_glock, CGlock);
 LINK_ENTITY_TO_CLASS(weapon_9mmhandgun, CGlock);
 
+void CGlock::GetWeaponData(weapon_data_t& data)
+{
+	data.iuser1 = m_bIsAkimbo ? 1 : 0;
+	data.iuser2 = m_iClipLeft;
+}
+
+void CGlock::SetWeaponData(const weapon_data_t& data)
+{
+	m_bIsAkimbo = data.iuser1 != 0;
+	m_iClipLeft = data.iuser2;
+}
+
 void CGlock::Spawn()
 {
 	pev->classname = MAKE_STRING("weapon_9mmhandgun"); // hack to allow for old names
