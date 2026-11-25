@@ -1010,6 +1010,7 @@ void ClientPrecache()
 
 	// PRECACHE_SOUND("player/pl_jumpland2.wav");		// UNDONE: play 2x step sound
 
+	PRECACHE_SOUND("player/pl_fallpain1.wav");
 	PRECACHE_SOUND("player/pl_fallpain2.wav");
 	PRECACHE_SOUND("player/pl_fallpain3.wav");
 
@@ -1093,9 +1094,24 @@ void ClientPrecache()
 	PRECACHE_SOUND("common/bodysplat.wav");
 
 	// player pain sounds
+	PRECACHE_SOUND("player/pl_pain1.wav");
+	PRECACHE_SOUND("player/pl_pain2.wav");
+	PRECACHE_SOUND("player/pl_pain3.wav");
+	PRECACHE_SOUND("player/pl_pain4.wav");
 	PRECACHE_SOUND("player/pl_pain5.wav");
 	PRECACHE_SOUND("player/pl_pain6.wav");
 	PRECACHE_SOUND("player/pl_pain7.wav");
+	PRECACHE_SOUND("player/pl_pain8.wav");
+	PRECACHE_SOUND("player/pl_pain9.wav");
+	PRECACHE_SOUND("player/pl_pain10.wav");
+	PRECACHE_SOUND("player/pl_pain11.wav");
+	PRECACHE_SOUND("player/pl_pain12.wav");
+
+	PRECACHE_SOUND("player/pl_die1.wav");
+	PRECACHE_SOUND("player/pl_die2.wav");
+	PRECACHE_SOUND("player/pl_die3.wav");
+	
+	PRECACHE_SOUND("player/h2odeath.wav");
 
 	PRECACHE_SOUND("debris/beamstart1.wav");
 
@@ -1125,6 +1141,18 @@ void ClientPrecache()
 	PRECACHE_SOUND("player/pl_jump1.wav");
 	PRECACHE_SOUND("player/pl_jump2.wav");
 	PRECACHE_SOUND("player/pl_jump3.wav");
+	PRECACHE_SOUND("player/pl_jump4.wav");
+	PRECACHE_SOUND("player/pl_jump5.wav");
+	PRECACHE_SOUND("player/pl_jump6.wav");
+	PRECACHE_SOUND("player/pl_jump7.wav");
+	PRECACHE_SOUND("player/pl_jump8.wav");
+	PRECACHE_SOUND("player/pl_jump9.wav");
+	PRECACHE_SOUND("player/pl_jump10.wav");
+	PRECACHE_SOUND("player/pl_jump11.wav");
+	PRECACHE_SOUND("player/pl_jump12.wav");
+	PRECACHE_SOUND("player/pl_jump13.wav");
+	PRECACHE_SOUND("player/pl_jump14.wav");
+	PRECACHE_SOUND("player/pl_jump15.wav");
 
 	if (giPrecacheGrunt)
 		UTIL_PrecacheOther("monster_human_grunt");

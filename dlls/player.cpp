@@ -166,16 +166,51 @@ LINK_ENTITY_TO_CLASS(player, CBasePlayer);
 
 void CBasePlayer::Pain()
 {
-	float flRndSound; //sound randomizer
+	// water death sounds
+	if (pev->waterlevel == 3)
+	{
+		return;
+	}
 
-	flRndSound = RANDOM_FLOAT(0, 1);
-
-	if (flRndSound <= 0.33)
-		EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain5.wav", 1, ATTN_NORM);
-	else if (flRndSound <= 0.66)
-		EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain6.wav", 1, ATTN_NORM);
-	else
-		EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain7.wav", 1, ATTN_NORM);
+	switch (RANDOM_LONG(0, 11))
+	{
+		case 0:
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain1.wav", 1, ATTN_NORM);
+			break;
+		case 1:
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain2.wav", 1, ATTN_NORM);
+			break;
+		case 2:
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain3.wav", 1, ATTN_NORM);
+			break;
+		case 3:
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain4.wav", 1, ATTN_NORM);
+			break;
+		case 4:
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain5.wav", 1, ATTN_NORM);
+			break;
+		case 5:
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain6.wav", 1, ATTN_NORM);
+			break;
+		case 6:
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain7.wav", 1, ATTN_NORM);
+			break;
+		case 7:
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain8.wav", 1, ATTN_NORM);
+			break;
+		case 8:
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain9.wav", 1, ATTN_NORM);
+			break;
+		case 9:
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain10.wav", 1, ATTN_NORM);
+			break;
+		case 10:
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain11.wav", 1, ATTN_NORM);
+			break;
+		case 11:
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain12.wav", 1, ATTN_NORM);
+			break;
+	}
 }
 
 /* 
@@ -266,30 +301,28 @@ int TrainSpeed(int iSpeed, int iMax)
 void CBasePlayer::DeathSound()
 {
 	// water death sounds
-	/*
 	if (pev->waterlevel == 3)
 	{
 		EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/h2odeath.wav", 1, ATTN_NONE);
 		return;
 	}
-	*/
 
 	// temporarily using pain sounds for death sounds
-	switch (RANDOM_LONG(1, 5))
+	switch (RANDOM_LONG(0, 2))
 	{
+	case 0:
+		EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_die1.wav", 1, ATTN_NORM);
+		break;
 	case 1:
-		EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain5.wav", 1, ATTN_NORM);
+		EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_die2.wav", 1, ATTN_NORM);
 		break;
 	case 2:
-		EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain6.wav", 1, ATTN_NORM);
-		break;
-	case 3:
-		EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_pain7.wav", 1, ATTN_NORM);
+		EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_die3.wav", 1, ATTN_NORM);
 		break;
 	}
 
 	// play one of the suit death alarms
-	EMIT_GROUPNAME_SUIT(ENT(pev), "HEV_DEAD");
+	// EMIT_GROUPNAME_SUIT(ENT(pev), "HEV_DEAD");
 }
 
 // override takehealth
@@ -496,6 +529,7 @@ bool CBasePlayer::TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, fl
 
 		if ((bitsDamage & DMG_CLUB) != 0)
 		{
+			Pain();
 			if (fmajor)
 				SetSuitUpdate("!HEV_DMG4", false, SUIT_NEXT_IN_30SEC); // minor fracture
 			bitsDamage &= ~DMG_CLUB;
@@ -514,6 +548,7 @@ bool CBasePlayer::TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, fl
 
 		if ((bitsDamage & DMG_BULLET) != 0)
 		{
+			Pain();
 			if (m_lastDamageAmount > 5)
 				SetSuitUpdate("!HEV_DMG6", false, SUIT_NEXT_IN_30SEC); // blood loss detected
 			//else
@@ -525,6 +560,7 @@ bool CBasePlayer::TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, fl
 
 		if ((bitsDamage & DMG_SLASH) != 0)
 		{
+			Pain();
 			if (fmajor)
 				SetSuitUpdate("!HEV_DMG1", false, SUIT_NEXT_IN_30SEC); // major laceration
 			else
@@ -536,6 +572,7 @@ bool CBasePlayer::TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, fl
 
 		if ((bitsDamage & DMG_SONIC) != 0)
 		{
+			Pain();
 			if (fmajor)
 				SetSuitUpdate("!HEV_DMG2", false, SUIT_NEXT_IN_1MIN); // internal bleeding
 			bitsDamage &= ~DMG_SONIC;
@@ -544,6 +581,7 @@ bool CBasePlayer::TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, fl
 
 		if ((bitsDamage & (DMG_POISON | DMG_PARALYZE)) != 0)
 		{
+			Pain();
 			SetSuitUpdate("!HEV_DMG3", false, SUIT_NEXT_IN_1MIN); // blood toxins detected
 			bitsDamage &= ~(DMG_POISON | DMG_PARALYZE);
 			ffound = true;
@@ -551,6 +589,7 @@ bool CBasePlayer::TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, fl
 
 		if ((bitsDamage & DMG_ACID) != 0)
 		{
+			Pain();
 			SetSuitUpdate("!HEV_DET1", false, SUIT_NEXT_IN_1MIN); // hazardous chemicals detected
 			bitsDamage &= ~DMG_ACID;
 			ffound = true;
@@ -558,6 +597,7 @@ bool CBasePlayer::TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, fl
 
 		if ((bitsDamage & DMG_NERVEGAS) != 0)
 		{
+			Pain();
 			SetSuitUpdate("!HEV_DET0", false, SUIT_NEXT_IN_1MIN); // biohazard detected
 			bitsDamage &= ~DMG_NERVEGAS;
 			ffound = true;
@@ -565,12 +605,14 @@ bool CBasePlayer::TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, fl
 
 		if ((bitsDamage & DMG_RADIATION) != 0)
 		{
+			Pain();
 			SetSuitUpdate("!HEV_DET2", false, SUIT_NEXT_IN_1MIN); // radiation detected
 			bitsDamage &= ~DMG_RADIATION;
 			ffound = true;
 		}
 		if ((bitsDamage & DMG_SHOCK) != 0)
 		{
+			Pain();
 			bitsDamage &= ~DMG_SHOCK;
 			ffound = true;
 		}
@@ -580,6 +622,7 @@ bool CBasePlayer::TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, fl
 
 	if (fTookDamage && !ftrivial && fmajor && flHealthPrev >= 75)
 	{
+		// Pain();
 		// first time we take major damage...
 		// turn automedic on if not on
 		SetSuitUpdate("!HEV_MED1", false, SUIT_NEXT_IN_30MIN); // automedic on
@@ -590,6 +633,7 @@ bool CBasePlayer::TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, fl
 
 	if (fTookDamage && !ftrivial && fcritical && flHealthPrev < 75)
 	{
+		// Pain();
 
 		// already took major damage, now it's critical...
 		if (pev->health < 6)
@@ -605,6 +649,7 @@ bool CBasePlayer::TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, fl
 	// if we're taking time based damage, warn about its continuing effects
 	if (fTookDamage && (bitsDamageType & DMG_TIMEBASED) != 0 && flHealthPrev < 75)
 	{
+		// Pain();
 		if (flHealthPrev < 50)
 		{
 			if (!RANDOM_LONG(0, 3))
@@ -1638,18 +1683,52 @@ void CBasePlayer::Jump()
 		// Execute double jump
 		SetAnimation(PLAYER_JUMP);
 
-		float flRndSound; // sound randomizer
-
-		flRndSound = RANDOM_FLOAT(0, 1);
-
-		if (flRndSound <= 0.33)
-			EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_jump1.wav", 1, ATTN_NORM);
-		else if (flRndSound <= 0.66)
-			EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_jump2.wav", 1, ATTN_NORM);
-		else
-			EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_jump3.wav", 1, ATTN_NORM);
-		
-		// Pain();
+		switch (RANDOM_LONG(0, 13))
+		{
+			case 0:
+				EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_jump1.wav", 1, ATTN_NORM);
+				break;
+			case 1:
+				EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_jump2.wav", 1, ATTN_NORM);
+				break;
+			case 2:
+				EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_jump3.wav", 1, ATTN_NORM);
+				break;
+			case 3:
+				EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_jump4.wav", 1, ATTN_NORM);
+				break;
+			case 4:
+				EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_jump5.wav", 1, ATTN_NORM);
+				break;
+			case 5:
+				EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_jump6.wav", 1, ATTN_NORM);
+				break;
+			case 6:
+				EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_jump7.wav", 1, ATTN_NORM);
+				break;
+			case 7:
+				EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_jump8.wav", 1, ATTN_NORM);
+				break;
+			case 8:
+				EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_jump9.wav", 1, ATTN_NORM);
+				break;
+			case 9:
+				EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_jump10.wav", 1, ATTN_NORM);
+				break;
+			case 10:
+				EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_jump11.wav", 1, ATTN_NORM);
+				break;
+			case 11:
+				EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_jump12.wav", 1, ATTN_NORM);
+				break;
+			case 12:
+				EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_jump13.wav", 1, ATTN_NORM);
+				break;
+			case 13:
+				EMIT_SOUND(ENT(pev), CHAN_VOICE, "player/pl_jump14.wav", 1, ATTN_NORM);
+				break;
+		}
+			
 		pev->punchangle.x -= 2;
 		pev->velocity.z += (sqrt(2 * 800 * 45) * 1.1); // Adjust the value based on your game's jump height and gravity
 		m_bDoubleJumpUsed = true;
