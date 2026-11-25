@@ -201,17 +201,9 @@ void CKnife::BigSwing()
 		{
 			ClearMultiDamage();
 
-			float flDamage = (gpGlobals->time - m_flBigSwingStart) * gSkillData.plrDmgKnife + 25.0f;
-			if ((m_flNextPrimaryAttack + 1 < UTIL_WeaponTimeBase()) || g_pGameRules->IsMultiplayer())
-			{
-				// first swing does full damage
-				pEntity->TraceAttack(m_pPlayer->pev, flDamage, gpGlobals->v_forward, &tr, DMG_SLASH);
-			}
-			else
-			{
-				// subsequent swings do half
-				pEntity->TraceAttack(m_pPlayer->pev, flDamage / 2, gpGlobals->v_forward, &tr, DMG_SLASH);
-			}
+			float flDamage = gSkillData.plrDmgKnife * 3.5f;
+			pEntity->TraceAttack(m_pPlayer->pev, flDamage, gpGlobals->v_forward, &tr, DMG_SLASH);
+
 			ApplyMultiDamage(m_pPlayer->pev, m_pPlayer->pev);
 		}
 
@@ -330,7 +322,7 @@ void CKnife::SecondaryAttack()
 
 	m_iSwingMode = STAB_START;
 
-	m_flNextPrimaryAttack = m_flNextSecondaryAttack = GetNextAttackDelay(0.1);
+	m_flNextPrimaryAttack = m_flNextSecondaryAttack = GetNextAttackDelay(1.5);
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.2;
 }
 
