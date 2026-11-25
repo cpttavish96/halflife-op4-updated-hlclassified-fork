@@ -2232,6 +2232,67 @@
 		75 : "sitting3"
 	]
 ]
+@PointClass base(Monster, TalkMonster, Sequence) size(-16 -16 0, 16 16 72) studio("models/hostage.mdl") = monster_worker : "CS1.6 Hostage" 
+[
+  skin(Choices) : "Skin" : -1 =
+	[
+		-1 : "Random"
+		0: "Worker"
+		1: "Office"
+	]
+	suspicious(choices) : "Suspicious" : 0 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+]
+
+@PointClass base(Appearflags,RenderFields, Angles) size(-16 -16 0, 16 16 72) studio("models/hostage.mdl") = monster_worker_dead : "Dead CS1.6 Hostage" 
+[
+	pose(Choices) : "Pose" : 0 =
+	[
+		0 : "On back"
+		1 : "On Stomach"
+		2 : "Sitting"
+		3 : "Hanging"
+		4 : "Table1"
+		5 : "Table2"
+		6 : "Table3"
+	]
+	sequence(Choices) : "Animation Sequence (editor)" : 37 =
+	[
+		37 : "lying_on_back"
+		38 : "lying_on_stomach"
+		39 : "dead_sitting"
+		40 : "dead_table1"
+		41 : "dead_table2"
+		42 : "dead_table3"
+		43 : "dead_hang"
+	]
+]
+@PointClass base(Appearflags,RenderFields, Angles) size(-16 -16 0, 16 16 72) studio("models/hostage.mdl") = monster_employee_dead : "Dead CS1.6 Office Hostage" 
+[
+	pose(Choices) : "Pose" : 0 =
+	[
+		0 : "On back"
+		1 : "On Stomach"
+		2 : "Sitting"
+		3 : "Hanging"
+		4 : "Table1"
+		5 : "Table2"
+		6 : "Table3"
+	]
+	sequence(Choices) : "Animation Sequence (editor)" : 37 =
+	[
+		37 : "lying_on_back"
+		38 : "lying_on_stomach"
+		39 : "dead_sitting"
+		40 : "dead_table1"
+		41 : "dead_table2"
+		42 : "dead_table3"
+		43 : "dead_hang"
+	]
+]
 @PointClass base(Monster, Sequence) size(-16 -16 0, 16 16 72) studio("models/sentry.mdl") = monster_sentry : "Sentry Turret Gun"
 [
 	spawnflags(Flags) = 

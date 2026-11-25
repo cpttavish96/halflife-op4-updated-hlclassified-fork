@@ -712,6 +712,7 @@ void CScientist::TalkInit()
 	m_szFriends[1] = "monster_sitting_scientist";
 	m_szFriends[2] = "monster_barney";
 	m_szFriends[3] = "monster_fassassin_ally";
+	m_szFriends[4] = "monster_worker";
 
 	// scientists speach group names (group names are in sentences.txt)
 
@@ -1140,6 +1141,158 @@ int CScientist::FriendNumber(int arrayNumber)
 	return arrayNumber;
 }
 
+class CWorker : public CScientist
+{
+public:
+	void Precache() override;
+	void Spawn() override;
+	void TalkInit();
+};
+
+LINK_ENTITY_TO_CLASS(monster_worker, CWorker);
+
+//=========================================================
+// Spawn
+//=========================================================
+void CWorker::Spawn()
+{
+	pev->body = 0; // default
+
+	Precache();
+
+	SET_MODEL(ENT(pev), "models/hostage.mdl");
+	UTIL_SetSize(pev, VEC_HUMAN_HULL_MIN, VEC_HUMAN_HULL_MAX);
+
+	pev->solid = SOLID_SLIDEBOX;
+	pev->movetype = MOVETYPE_STEP;
+	m_bloodColor = BLOOD_COLOR_RED;
+	pev->health = gSkillData.scientistHealth;
+	pev->view_ofs = Vector(0, 0, 50);  // position of the eyes relative to monster's origin.
+	m_flFieldOfView = VIEW_FIELD_WIDE; // NOTE: we need a wide field of view so scientists will notice player and say hello
+	m_MonsterState = MONSTERSTATE_NONE;
+
+	m_afCapability = bits_CAP_HEAR | bits_CAP_TURN_HEAD | bits_CAP_OPEN_DOORS | bits_CAP_AUTO_DOORS | bits_CAP_USE;
+
+	pev->skin = RANDOM_LONG(0, 1);
+
+	MonsterInit();
+	SetUse(NULL);
+}
+
+//=========================================================
+// Precache - precaches all resources this monster needs
+//=========================================================
+void CWorker::Precache()
+{
+	PRECACHE_MODEL("models/hostage.mdl");
+	PRECACHE_SOUND("scientist/sci_pain1.wav");
+	PRECACHE_SOUND("scientist/sci_pain2.wav");
+	PRECACHE_SOUND("scientist/sci_pain3.wav");
+	PRECACHE_SOUND("scientist/sci_pain4.wav");
+	PRECACHE_SOUND("scientist/sci_pain5.wav");
+
+	// every new scientist must call this, otherwise
+	// when a level is loaded, nobody will talk (time is reset to 0)
+	TalkInit();
+
+	CTalkMonster::Precache();
+}
+
+void CWorker::TalkInit()
+{
+	CScientist::TalkInit();
+
+	m_voicePitch = 90;
+}
+
+class CDeadWorker : public CBaseMonster
+{
+public:
+	void Spawn() override;
+	int Classify() override { return CLASS_HUMAN_MILITARY; }
+
+	bool KeyValue(KeyValueData* pkvd) override;
+	int m_iPose; // which sequence to display
+	static const char* m_szPoses[7];
+};
+const char* CDeadWorker::m_szPoses[] = {"lying_on_back", "lying_on_stomach", "dead_sitting", "dead_hang", "dead_table1", "dead_table2", "dead_table3"};
+
+bool CDeadWorker::KeyValue(KeyValueData* pkvd)
+{
+	if (FStrEq(pkvd->szKeyName, "pose"))
+	{
+		m_iPose = atoi(pkvd->szValue);
+		return true;
+	}
+
+	return CBaseMonster::KeyValue(pkvd);
+}
+
+LINK_ENTITY_TO_CLASS(monster_worker_dead, CDeadWorker);
+
+//
+// ********** DeadScientist SPAWN **********
+//
+void CDeadWorker::Spawn()
+{
+	PRECACHE_MODEL("models/hostage.mdl");
+	SET_MODEL(ENT(pev), "models/hostage.mdl");
+
+	pev->effects = 0;
+	pev->sequence = 0;
+	pev->health = 8;
+
+	m_bloodColor = BLOOD_COLOR_RED;
+
+	pev->sequence = LookupSequence(m_szPoses[m_iPose]);	
+
+	if (pev->sequence == -1)
+	{
+		ALERT(at_console, "Dead CS1.6 Hostage with bad pose\n");
+	}
+	
+	// Corpses have less health
+	pev->body = 0; // default
+	pev->skin = 0; // default
+
+	MonsterInitDead();
+}
+
+class CDeadEmployee : public CDeadWorker
+{
+public:
+	void Spawn() override;
+	int Classify() override { return CLASS_HUMAN_MILITARY; }
+};
+LINK_ENTITY_TO_CLASS(monster_employee_dead, CDeadEmployee);
+
+//
+// ********** DeadScientist SPAWN **********
+//
+void CDeadEmployee::Spawn()
+{
+	PRECACHE_MODEL("models/hostage.mdl");
+	SET_MODEL(ENT(pev), "models/hostage.mdl");
+
+	pev->effects = 0;
+	pev->sequence = 0;
+	pev->health = 8;
+
+	m_bloodColor = BLOOD_COLOR_RED;
+
+	pev->sequence = LookupSequence(m_szPoses[m_iPose]);	
+
+	if (pev->sequence == -1)
+	{
+		ALERT(at_console, "Dead CS1.6 Hostage with bad pose\n");
+	}
+	
+	// Corpses have less health
+	pev->body = 0; // default
+	pev->skin = 1; // default
+
+	MonsterInitDead();
+}
 
 //=========================================================
 // Dead Scientist PROP

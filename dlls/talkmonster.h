@@ -35,7 +35,7 @@
 #define bit_saidHeard (1 << 6)
 #define bit_saidSmelled (1 << 7)
 
-#define TLK_CFRIENDS 4
+#define TLK_CFRIENDS 5
 
 typedef enum
 {
