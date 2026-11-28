@@ -362,6 +362,8 @@ void CGlock::EliteFire(float flSpread, float flCycleTime, bool fUseAutoAim, bool
 		{
 			PlayEmptySound();
 			m_flNextPrimaryAttack = m_flNextSecondaryAttack = GetNextAttackDelay(0.2);
+			m_iClipLeft = 0;
+			SecondaryAttack();
 		}
 
 		return;
@@ -373,6 +375,9 @@ void CGlock::EliteFire(float flSpread, float flCycleTime, bool fUseAutoAim, bool
 		{
 			PlayEmptySound();
 			m_flNextPrimaryAttack = m_flNextSecondaryAttack = GetNextAttackDelay(0.2);
+			m_iClip = m_iClipLeft;
+			m_iClipLeft = 0;
+			SecondaryAttack();
 		}
 
 		return;
